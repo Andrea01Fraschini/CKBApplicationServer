@@ -2,8 +2,8 @@ open util/boolean
 open ckb_signatures
 
 // What to describe: 
-// [ ] Upload solution 
-// [ ] End battle + evaluation
+// [X] Upload solution 
+// [X] End battle + evaluation
 // [X] End of tournament 
 // [X] Award badges
 
@@ -26,6 +26,14 @@ fun getBadgeTournament[b : Badge]: one Tournament {
 
 fun getBattleBySolution[s : Solution]: one Battle {
     enrolledGroups.(uploadedSolution.s)
+}
+
+fun getTournamentManagerByBattle[b : Battle]: set Educator {
+    hasPermissionsFor.(hosts.b)
+}
+
+fun awardedBadgesForTournament[t : Tournament, s : Student]: set Badge {
+    t.hasBadges & s.elegibleForBadges
 }
 
 // General facts 
@@ -51,13 +59,6 @@ fact mustPartecipateToTournamentForBadge {
     always all s : Student | some t : Tournament | 
         s.elegibleForBadges in t.hasBadges iff s in getTournamentStudents[t] 
 }
-
-// Solutions should not have a manual evaluation unless the battle requires it
-// pred manualEvaluationOnlyIfRequired {
-//     always all s : Solution | s.evaluatedBy != none iff (
-//         let b = getBattleBySolution[s] | b.requiresManualEvaluation = True
-//     )
-// }
 
 // Once an educator has manually evaluated a solution, no other educator can evaluate
 fact evaluatorRemainsTheSame {
@@ -94,28 +95,6 @@ fact battleInTournament {
 // [R10]: The system allows the educator to make a manual assessment of the students' 
 // solution, if specidied in the scoring configurations. 
 
-// get solutions that require a manual evaluation
-// pred closeBattle[b : Battle] {
-//     b.status = Open and b.status' = Closed
-// }
-
-// fun solutionsToBeManuallyEvaluated[b : Battle]: set Solution {
-//     (b.enrolledGroups & (requiresManualEvaluation.True).enrolledGroups).uploadedSolution
-// }
-
-// get educators that have permissions for tournament
-fun getTournamentManagerByBattle[b : Battle]: set Educator {
-    hasPermissionsFor.(hosts.b)
-}
-
-// [CULPRIT]
-// pred giveManualEvaluation {
-//     always all b : Battle | closeBattle[b] implies (
-//         let sl2bMEval = solutionsToBeManuallyEvaluated[b] | some e : Educator |
-//             e in getTournamentManagerByBattle[b] and e = sl2bMEval.evaluatedBy
-//     )
-// }
-
 // The educator giving a manual assessment must have permissions to manage battle 
 fact evaluatorIsTournamentManager {
     always all s : Solution | s.evaluatedBy != none implies 
@@ -141,10 +120,6 @@ pred closeTournament[t : Tournament] {
 
 // [R16]: The system should assign a badge to one or more students at the end of the 
 // tournament if the students have fulfilled the badge's requirements to achieve it.
-fun awardedBadgesForTournament[t : Tournament, s : Student]: set Badge {
-    t.hasBadges & s.elegibleForBadges
-}
-
 fact assignOnlySatisfiedBadges {
     always all t : Tournament | closeTournament[t] implies 
         (all s : Student | s.badges' = s.badges + awardedBadgesForTournament[t, s]) 
