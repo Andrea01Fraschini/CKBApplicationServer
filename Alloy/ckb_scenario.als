@@ -1,63 +1,53 @@
 open util/boolean
 open ckb_signatures
 
-// What to describe: 
-// [X] Upload solution 
-// [X] End battle + evaluation
-// [X] End of tournament 
-// [X] Award badges
-
 // Util functions 
-fun getBattleByGroup[g : Group]: set Battle {
+fun getBattleByGroup[g : Group]: one Battle {
     enrolledGroups.g
 }
 
-fun getTournamentStudents[t : Tournament]: set Student {
-    ((t.hosts).enrolledGroups).members
+fun getStudentsInTournament[t : Tournament]: set Student {
+    ((t.battles).enrolledGroups).members
 }
 
-fun getBattleSolutions[b : Battle]: one Solution {
-    (b.enrolledGroups).uploadedSolution
-}
-
-fun getBadgeTournament[b : Badge]: one Tournament {
-    hasBadges.b
+fun getSolutionsByBattle[b : Battle]: set Solution {
+    (b.enrolledGroups).currentSolution
 }
 
 fun getBattleBySolution[s : Solution]: one Battle {
-    enrolledGroups.(uploadedSolution.s)
+    enrolledGroups.(currentSolution.s)
 }
 
-fun getTournamentManagerByBattle[b : Battle]: set Educator {
-    hasPermissionsFor.(hosts.b)
+fun getTournamentManagersByBattle[b : Battle]: set Educator {
+    hasPermissionsFor.(battles.b)
 }
 
-fun awardedBadgesForTournament[t : Tournament, s : Student]: set Badge {
-    t.hasBadges & s.elegibleForBadges
+fun getAwardableBadges[t : Tournament, s : Student]: set Badge {
+    t.badges & s.satisfiedBadges
 }
 
 // General facts 
 
 // Solutions are created by groups 
 fact groupSolutions {
-    always all sl : Solution | some g : Group | sl in g.uploadedSolution
+    always all sl : Solution | some g : Group | sl in g.currentSolution
 }
 
 // After a badge is assigned, the student can't be elegible for that badge again
 fact noDoubleBadges {
-    always all s : Student | s.badges & s.elegibleForBadges = none 
+    always all s : Student | s.awardedBadges & s.satisfiedBadges = none 
 }
 
 // Students cannot become elegible for badges of already closed tournaments 
 fact achieveOpenTournamentBadges {
-    always all b : Badge | all s : Student | let t = hasBadges.b | 
-        b in s.elegibleForBadges implies t.status = Open
+    always all b : Badge | all s : Student | let t = badges.b | 
+        b in s.satisfiedBadges implies t.status = Open
 }
 
 // Student cannot achieve badges fo tournament they didn't participate in 
 fact mustPartecipateToTournamentForBadge {
     always all s : Student | some t : Tournament | 
-        s.elegibleForBadges in t.hasBadges iff s in getTournamentStudents[t] 
+        s.satisfiedBadges in t.badges iff s in getStudentsInTournament[t] 
 }
 
 // Once an educator has manually evaluated a solution, no other educator can evaluate
@@ -69,8 +59,14 @@ fact evaluatorRemainsTheSame {
 // If a tournament is closed, there can't be any open battle belonging to that tournament
 fact noOpenBattlesForClosedTournament {
     always all t : Tournament | t.status = Closed implies (
-        let b = t.hosts | b.status = Closed
+        let b = t.battles | b.status = Closed
     )
+}
+
+// If a battle is closed, all current solutions must be evaluated
+fact allSolutionsEvaluatedForClosedBattle {
+    always all b : Battle | b.status = Closed implies 
+        (let s = getSolutionsByBattle[b] | s.evaluated = True)
 }
 
 // -------- REQUIREMENTS ----------
@@ -84,12 +80,12 @@ fact studentOneEnrollmentPerBattle {
 
 // [R7]: The system allows an educator to create badges within a tournament.
 fact badgeInTournament {
-    all bg : Badge | some t : Tournament | bg in t.hasBadges
+    all bg : Badge | some t : Tournament | bg in t.badges
 }
 
 // [R8]: The system allows an educator to create a battle within a tournament.
 fact battleInTournament {
-    all b : Battle | some t : Tournament | b in t.hosts
+    all b : Battle | some t : Tournament | b in t.battles
 }
 
 // [R10]: The system allows the educator to make a manual assessment of the students' 
@@ -98,7 +94,7 @@ fact battleInTournament {
 // The educator giving a manual assessment must have permissions to manage battle 
 fact evaluatorIsTournamentManager {
     always all s : Solution | s.evaluatedBy != none implies 
-        s.evaluatedBy in getTournamentManagerByBattle[getBattleBySolution[s]]
+        s.evaluatedBy in getTournamentManagersByBattle[getBattleBySolution[s]]
 }
 
 // Solutions should only be evaluated at the end of a battle
@@ -108,11 +104,10 @@ fact manualEvaluationOnlyAfterBattleCloses {
     )
 }
 
-// [DEBATABLE]
+// [TODO]
 // [R14]: The system must update the personal tournament score of each student, that is
-// the sum of all battle scores rreceived in that tournament, at the end of each battle.
+// the sum of all battle scores received in that tournament, at the end of each battle.
 
-// [TODO: Remove, this would need the presence of an educator]
 // [R15]: The system allows the educator to close a tournament. 
 pred closeTournament[t : Tournament] {
     t.status = Open and t.status' = Closed
@@ -122,20 +117,20 @@ pred closeTournament[t : Tournament] {
 // tournament if the students have fulfilled the badge's requirements to achieve it.
 fact assignOnlySatisfiedBadges {
     always all t : Tournament | closeTournament[t] implies 
-        (all s : Student | s.badges' = s.badges + awardedBadgesForTournament[t, s]) 
+        (all s : Student | s.awardedBadges' = s.awardedBadges + getAwardableBadges[t, s]) 
 }
 
 // [R16.1]: Badges should not be assigned until the torunament is over. 
 fact noBadgesForOpenTournaments {
     always all t : Tournament | no s : Student | t.status = Open and 
-        (s.badges & t.hasBadges) != none
+        (s.awardedBadges & t.badges) != none
 }
 
 // [R18]: The system should not take into considerations solutions outside the 
 // sumbission deadlines (aka after a battle ends)
 fact noUploadsAfterBattleEnd {
     always all b : Battle | b.status' = Closed implies  
-        getBattleSolutions[b] = (b.enrolledGroups).uploadedSolution' 
+        getSolutionsByBattle[b] = (b.enrolledGroups).currentSolution' 
 }
 
 // [R20]: The system should not allow groups that don't meet battle group size 
@@ -168,7 +163,7 @@ fact noReopeningTournaments {
 
 // [R25]: Once a badge has been assigned to a student, the student cannot loose that badge. 
 fact badgesCannotBeLost {
-    always all s : Student | s.badges in s.badges'
+    always all s : Student | s.awardedBadges in s.awardedBadges'
 }
 
 // [R26]: Once the submission deadline for a battle has been reached, it cannot be reopened
@@ -181,9 +176,9 @@ fact forceSimulation {
     // Force at least one manually evaluated solution
     (eventually some s : Solution | s.evaluatedBy != none) and
     // Force at least one battle that does not require manual evaluation
-    (always some b : Battle | getBattleSolutions[b] != none and b.requiresManualEvaluation = False) and
+    (always some b : Battle | getSolutionsByBattle[b] != none and b.requiresManualEvaluation = False) and
     // Force at least one student achieving a badge
-    (eventually some st : Student | st.badges != none)
+    (eventually some st : Student | st.awardedBadges != none)
 }
 
 // ------------------------------------
@@ -193,9 +188,12 @@ pred show[t: Tournament, b : Battle] {
     b.status = Open; b.status = Open
     #Educator < 4 and #Educator > 1
     #Group > 1
-    #Student > 1
+    #Student > 3
     #Badge > 2
     #Battle > 1
 }
 
-run show for 5 but 1 Tournament, 2 Battle, 3 steps
+run show for 10 but 2 Tournament, 3 Battle, 3 steps
+
+// UPGRADES: 
+// - when a group uploads a solution, another group cannot "steal" it

@@ -5,9 +5,9 @@ abstract sig User {}
 enum Status { Open, Closed }
 
 sig Student extends User {
-	var badges: set Badge,
+	var awardedBadges: set Badge,
 	// var score: one Int,
-	var elegibleForBadges: set Badge
+	var satisfiedBadges: set Badge
 } {
 	// score >= 0
 }
@@ -30,8 +30,8 @@ sig Battle {
 }
 
 sig Tournament {
-	hosts: disj set Battle,
-	hasBadges: disj set Badge, 
+	battles: disj set Battle,
+	badges: disj set Badge, 
 	var status: one Status 
 }
 
@@ -46,7 +46,7 @@ sig Group {
 	owner: one Student,
 	members: some Student,
 	// var battleScore: one Int,
-	var uploadedSolution: disj lone Solution
+	var currentSolution: disj lone Solution
 } {
 	// battleScore >= 0
 }
