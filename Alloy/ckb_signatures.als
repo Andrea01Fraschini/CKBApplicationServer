@@ -6,10 +6,10 @@ enum Status { Open, Closed }
 
 sig Student extends User {
 	var awardedBadges: set Badge,
-	// var score: one Int,
-	var satisfiedBadges: set Badge
+	var satisfiedBadges: set Badge,
+	var tournamentScore: Tournament -> Int
 } {
-	// score >= 0
+	Tournament.tournamentScore >= 0
 }
 
 sig Educator extends User {
@@ -45,8 +45,9 @@ var sig Solution {
 sig Group {
 	owner: one Student,
 	members: some Student,
-	// var battleScore: one Int,
+	var battleScore: one Int,
 	var currentSolution: disj lone Solution
 } {
-	// battleScore >= 0
+	battleScore >= 0 and
+	battleScore <= 5 // high numbers don't work 
 }

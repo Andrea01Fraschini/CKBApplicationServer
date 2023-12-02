@@ -26,11 +26,24 @@ fun getAwardableBadges[t : Tournament, s : Student]: set Badge {
     t.badges & s.satisfiedBadges
 }
 
+fun getGroupsByStudentAndTournament[s : Student, t : Tournament]: set Group {
+    (members.s) & (t.battles).enrolledGroups
+}
+
+fun sumBattleScoresForGroups[g : Group]: Int {
+    sum score : g.battleScore | score
+}
+
 // General facts 
 
 // Solutions are created by groups 
 fact groupSolutions {
     always all sl : Solution | some g : Group | sl in g.currentSolution
+}
+
+// Consider only students in groups 
+fact studentsInGroups {
+    always all s : Student | some g : Group | s in g.members
 }
 
 // After a badge is assigned, the student can't be elegible for that badge again
@@ -56,6 +69,12 @@ fact evaluatorRemainsTheSame {
         s.evaluatedBy = s.evaluatedBy'
 }
 
+// Manual evaluation implies that the solution has been evaluated
+fact evaluationConsistency {
+    always all s : Solution | (getBattleBySolution[s].requiresManualEvaluation = True and
+        s.evaluatedBy != none) implies s.evaluated = True
+}
+
 // If a tournament is closed, there can't be any open battle belonging to that tournament
 fact noOpenBattlesForClosedTournament {
     always all t : Tournament | t.status = Closed implies (
@@ -67,6 +86,19 @@ fact noOpenBattlesForClosedTournament {
 fact allSolutionsEvaluatedForClosedBattle {
     always all b : Battle | b.status = Closed implies 
         (let s = getSolutionsByBattle[b] | s.evaluated = True)
+}
+
+// If a group hasn't uploaded a solution or the current one hasn't been evaluated, 
+// they should have 0 points
+fact noSolutionOrEvaluationNoScore {
+    always all g : Group | (g.currentSolution = none or (g.currentSolution).evaluated = False) 
+        iff g.battleScore = 0
+}
+
+// The score assigned to a specific solution is always the same
+fact sameSolutionSameScore {
+    always all g : Group |  g.currentSolution = g.currentSolution' implies 
+        g.battleScore = g.battleScore' 
 }
 
 // -------- REQUIREMENTS ----------
@@ -104,9 +136,12 @@ fact manualEvaluationOnlyAfterBattleCloses {
     )
 }
 
-// [TODO]
 // [R14]: The system must update the personal tournament score of each student, that is
 // the sum of all battle scores received in that tournament, at the end of each battle.
+fact tournamentScoreEqualToSumOfBattles {
+    always all s : Student, t : Tournament | s in getStudentsInTournament[t] implies 
+        t.(s.tournamentScore) = sumBattleScoresForGroups[getGroupsByStudentAndTournament[s, t]]
+}
 
 // [R15]: The system allows the educator to close a tournament. 
 pred closeTournament[t : Tournament] {
@@ -178,8 +213,12 @@ fact forceSimulation {
     // Force at least one battle that does not require manual evaluation
     (always some b : Battle | getSolutionsByBattle[b] != none and b.requiresManualEvaluation = False) and
     // Force at least one student achieving a badge
-    (eventually some st : Student | st.awardedBadges != none)
+    (eventually some st : Student | st.awardedBadges != none) and
+    // Some solution is not evaluated at some point 
+    (eventually some s : Solution | s.evaluated = False)
 }
+
+// [TODO] GOALS (?)
 
 // ------------------------------------
 
@@ -187,13 +226,13 @@ pred show[t: Tournament, b : Battle] {
     t.status = Open; t.status = Open; t.status = Closed
     b.status = Open; b.status = Open
     #Educator < 4 and #Educator > 1
-    #Group > 1
-    #Student > 3
+    #Group > 2
+    #Student > 2
     #Badge > 2
     #Battle > 1
 }
 
-run show for 10 but 2 Tournament, 3 Battle, 3 steps
+run show for 15 but 2 Tournament, 3 Battle, 3 steps
 
 // UPGRADES: 
 // - when a group uploads a solution, another group cannot "steal" it
