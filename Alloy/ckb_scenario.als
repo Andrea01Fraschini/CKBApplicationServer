@@ -59,8 +59,8 @@ fact achieveOpenTournamentBadges {
 
 // Student cannot achieve badges fo tournament they didn't participate in 
 fact mustPartecipateToTournamentForBadge {
-    always all s : Student | some t : Tournament | 
-        s.satisfiedBadges in t.badges iff s in getStudentsInTournament[t] 
+    always all s : Student | all t : Tournament | 
+        (s.satisfiedBadges & t.badges) != none implies s in getStudentsInTournament[t] 
 }
 
 // Once an educator has manually evaluated a solution, no other educator can evaluate
