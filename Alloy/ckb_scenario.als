@@ -218,7 +218,48 @@ fact forceSimulation {
     (eventually some s : Solution | s.evaluated = False)
 }
 
-// [TODO] GOALS (?)
+// ---------------- GOALS -----------------------
+// [G1]: Students want to participate as groups (or by themselves) in coding battles 
+assert studentsParticipateToBattles {
+    some s : Student | some g : Group | some b : Battle |
+        g in b.enrolledGroups and 
+        s in g.members and #g.members >= 1 
+}
+
+check studentsParticipateToBattles
+
+// [G5] Educators want to create and customize gamification badges that will be
+// automatically assigned to students.
+assert badgesCanBeAssignedToStudents {
+    eventually some s : Student | some b : Badge | 
+        b in s.awardedBadges
+}
+
+check badgesCanBeAssignedToStudents
+
+// [G6]: Educators want the platform to provide automated assessments of students'
+// work while also enabling manual evaluations.
+assert computePointsForBattles {
+    eventually all g : Group |
+        g.battleScore != 0 iff (g.currentSolution != none and g.currentSolution.evaluated = True)
+}
+
+check computePointsForBattles
+
+assert automatedAssessment {
+    eventually some s : Solution | 
+        s.evaluated = True
+}
+
+check automatedAssessment
+
+assert allowManualAssessment {
+    eventually all s : Solution | let b = getBattleBySolution[s] |
+        b.requiresManualEvaluation = True and b.status = Closed implies some e : Educator | 
+            s.evaluatedBy = e and e in getTournamentManagersByBattle[b]
+}
+
+check allowManualAssessment
 
 // ------------------------------------
 
