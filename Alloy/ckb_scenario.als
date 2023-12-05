@@ -246,6 +246,15 @@ assert computePointsForBattles {
 
 check computePointsForBattles
 
+assert pointsAssignedForTorunaments {
+    eventually all s : Student | all t : Tournament | 
+        let g = getGroupsByStudentAndTournament[s, t] |
+            s in getStudentsInTournament[t] and t.status = Closed implies 
+            t.(s.tournamentScore) = sumBattleScoresForGroups[g]
+}
+
+check pointsAssignedForTorunaments
+
 assert automatedAssessment {
     eventually some s : Solution | 
         s.evaluated = True
