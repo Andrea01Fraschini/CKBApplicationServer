@@ -46,12 +46,12 @@ fact studentsInGroups {
     always all s : Student | some g : Group | s in g.members
 }
 
-// After a badge is assigned, the student can't be elegible for that badge again
+// After a badge is assigned, the student can't be eligible for that badge again
 fact noDoubleBadges {
     always all s : Student | s.awardedBadges & s.satisfiedBadges = none 
 }
 
-// Students cannot become elegible for badges of already closed tournaments 
+// Students cannot become eligible for badges of already closed tournaments 
 fact achieveOpenTournamentBadges {
     always all b : Badge | all s : Student | let t = badges.b | 
         b in s.satisfiedBadges implies t.status = Open
@@ -155,14 +155,14 @@ fact assignOnlySatisfiedBadges {
         (all s : Student | s.awardedBadges' = s.awardedBadges + getAwardableBadges[t, s]) 
 }
 
-// [R16.1]: Badges should not be assigned until the torunament is over. 
+// [R16.1]: Badges should not be assigned until the tournament is over. 
 fact noBadgesForOpenTournaments {
     always all t : Tournament | no s : Student | t.status = Open and 
         (s.awardedBadges & t.badges) != none
 }
 
 // [R18]: The system should not take into considerations solutions outside the 
-// sumbission deadlines (aka after a battle ends)
+// submission deadlines (aka after a battle ends)
 fact noUploadsAfterBattleEnd {
     always all b : Battle | b.status' = Closed implies  
         getSolutionsByBattle[b] = (b.enrolledGroups).currentSolution' 
