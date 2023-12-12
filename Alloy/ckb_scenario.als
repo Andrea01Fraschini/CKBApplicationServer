@@ -110,6 +110,24 @@ fact studentOneEnrollmentPerBattle {
         getBattleByGroup[g1] != getBattleByGroup[g2]
 }
 
+// [R4.3]: The system should not allow groups that don't meet battle group size 
+// requirements to participate.
+fact correctGroupSize {
+    all g : Group | let b = getBattleByGroup[g] |
+        #g.members >= b.groupsMinSize and #g.members <= b.groupsMaxSize
+}
+
+// [R6.1]: Every tournament should have one and only one owner. 
+fact singleTournamentOwner {
+    all t : Tournament | one e : Educator | t in e.owns
+}
+
+// [R6.2]: Every educator that owns a tournament should have permission to manage that 
+// tournament.
+fact tournamentOwnership {
+    all e : Educator | e.owns in e.hasPermissionsFor
+}
+
 // [R7]: The system allows an educator to create badges within a tournament.
 fact badgeInTournament {
     all bg : Badge | some t : Tournament | bg in t.badges
@@ -136,6 +154,13 @@ fact manualEvaluationOnlyAfterBattleCloses {
     )
 }
 
+// [R12.6]: The system should not take into considerations solutions outside the 
+// submission deadlines (aka after a battle ends)
+fact noUploadsAfterBattleEnd {
+    always all b : Battle | b.status' = Closed implies  
+        getSolutionsByBattle[b] = (b.enrolledGroups).currentSolution' 
+}
+
 // [R14]: The system must update the personal tournament score of each student, that is
 // the sum of all battle scores received in that tournament, at the end of each battle.
 fact tournamentScoreEqualToSumOfBattles {
@@ -146,6 +171,11 @@ fact tournamentScoreEqualToSumOfBattles {
 // [R15]: The system allows the educator to close a tournament. 
 pred closeTournament[t : Tournament] {
     t.status = Open and t.status' = Closed
+}
+
+// [R15.5]: Once a tournament has been closed, it cannot be reopened
+fact noReopeningTournaments {
+    always all t : Tournament | t.status = Closed implies t.status' = Closed
 }
 
 // [R16]: The system should assign a badge to one or more students at the end of the 
@@ -161,29 +191,9 @@ fact noBadgesForOpenTournaments {
         (s.awardedBadges & t.badges) != none
 }
 
-// [R18]: The system should not take into considerations solutions outside the 
-// submission deadlines (aka after a battle ends)
-fact noUploadsAfterBattleEnd {
-    always all b : Battle | b.status' = Closed implies  
-        getSolutionsByBattle[b] = (b.enrolledGroups).currentSolution' 
-}
-
-// [R20]: The system should not allow groups that don't meet battle group size 
-// requirements to participate.
-fact correctGroupSize {
-    all g : Group | let b = getBattleByGroup[g] |
-        #g.members >= b.groupsMinSize and #g.members <= b.groupsMaxSize
-}
-
-// [R22]: Every tournament should have one and only one owner. 
-fact singleTournamentOwner {
-    all t : Tournament | one e : Educator | t in e.owns
-}
-
-// [R23]: Every educator that owns a tournament should have permission to manage that 
-// tournament.
-fact tournamentOwnership {
-    all e : Educator | e.owns in e.hasPermissionsFor
+// [R16.2]: Once a badge has been assigned to a student, the student cannot lose that badge. 
+fact badgesCannotBeLost {
+    always all s : Student | s.awardedBadges in s.awardedBadges'
 }
 
 // Group owner is part of the group members. 
@@ -191,17 +201,7 @@ fact groupOwnership {
     all s : Student | all g : Group | s in g.owner implies s in g.members
 }
 
-// [R24]: Once a tournament has been closed, it cannot be reopened
-fact noReopeningTournaments {
-    always all t : Tournament | t.status = Closed implies t.status' = Closed
-}
-
-// [R25]: Once a badge has been assigned to a student, the student cannot loose that badge. 
-fact badgesCannotBeLost {
-    always all s : Student | s.awardedBadges in s.awardedBadges'
-}
-
-// [R26]: Once the submission deadline for a battle has been reached, it cannot be reopened
+// [R18.1]: Once the submission deadline for a battle has been reached, it cannot be reopened
 fact noReopeningBattles {
     always all b : Battle | b.status = Closed implies b.status' = Closed
 }
