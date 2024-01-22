@@ -1,15 +1,17 @@
 package com.example.demo;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("api/v1")
+@AllArgsConstructor
 public class AuthenticationRouter {
 
-    AuthenticationBusiness authenticationBusiness;
+    AuthenticationService authenticationService;
 
     @PostMapping(path = "/registerNewAccount")
     public String registerNewAccount(){
@@ -19,5 +21,10 @@ public class AuthenticationRouter {
     @PostMapping(path = "/login")
     public String login(){
         return "DENTRO login";
+    }
+
+    @GetMapping("/test")
+    public void getTest(){
+
     }
 }
