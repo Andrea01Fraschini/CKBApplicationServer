@@ -20,17 +20,23 @@ public class AuthenticationService {
      * @param password
      */
     public MessageReturn insertNewAccount(String username, String email, String password) {
+        String hashUser = SHA256.hashSHA256(username);
+        String hashEmail = SHA256.hashSHA256(email);
+        String hashPassword = SHA256.hashSHA256(password);
+
         //example of key => username, email of the user or id of the group
         //all values are encrypt in hash-256 look at the SHA256 class
 
         //here It controls if the pair key1 and key2 already exists
-        if(control(username) && control(email)){
-            String hashUser = SHA256.hashSHA256(username);
-            String hashEmail = SHA256.hashSHA256(email);
+        if(control(hashUser) && control(hashEmail)){
 
-            if(hashUser != null && hashEmail!= null) {
-                PairKeyValue pairKeyValue = new PairKeyValue(hashUser, hashEmail);
-                // pairKeyValueRepository.insert(pairKeyValue);
+            if(hashUser != null && hashEmail!= null && hashPassword != null) {
+                PairKeyValue user = new PairKeyValue(hashUser, hashPassword);
+                PairKeyValue emailData = new PairKeyValue(hashEmail, hashPassword);
+
+                pairKeyValueRepository.insert(user);
+                pairKeyValueRepository.insert(emailData);
+
                 return new MessageReturn(200, "OK");
             }else {
                 return new MessageReturn(404, "Hashing process didn't work");
@@ -53,7 +59,6 @@ public class AuthenticationService {
 
     private Boolean control(String key){
         Optional<PairKeyValue> pair = pairKeyValueRepository.findPairKeyValueByKey(key);
-
         return pair.isEmpty();
     }
 }
