@@ -1,9 +1,12 @@
 package com.example.demo;
 
+import com.example.demo.db.PairKeyValue;
+import com.example.demo.db.PairKeyValueRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.Random;
 
 @AllArgsConstructor
 @Service
@@ -52,9 +55,48 @@ public class AuthenticationService {
      * @param key
      */
     public MessageReturn authentication(String key, String value){
-        // search to login
-        // pairKeyValueRepository.findPairKeyValueByKey()
-        return new MessageReturn(0,  null);
+        String hashKey = SHA256.hashSHA256(key);
+        String hashValue = SHA256.hashSHA256(value);
+
+        if( hashKey == null && hashValue == null){
+            // qui ritornare errore interno => con un http....
+            //TODO POSSO SOTITUIRLO CON UN'ECCEZIONE CHE MANDO IO VEDI CARTELLA SECURITY => SI FARE COSì
+            return new MessageReturn(404, "Hashing process didn't work");
+        }
+
+        Optional<PairKeyValue> pairKeyValue = pairKeyValueRepository.findPairKeyValueByKey(hashKey);
+
+        if(pairKeyValue.isPresent()) {
+            if (pairKeyValue.get().getValue().equals(hashValue)) {
+                return new MessageReturn(200, "OK");
+            }
+        }
+
+        return new MessageReturn(205, "KO");
+
+    }
+
+    public MessageReturn createAPIAuthToken(String id){
+        String hashId = SHA256.hashSHA256(id);
+
+        if(hashId == null){
+            return new MessageReturn(404, "Hashing process didn't work");
+        }
+
+        if(!control(hashId)){
+            return new MessageReturn(400, "token already exists");
+        }
+
+        Random random = new Random();
+        String hashToken = SHA256.hashSHA256(id+String.valueOf(random.nextInt()));
+
+        //manda un errore
+        assert hashToken != null;
+        PairKeyValue pairKeyValue = new PairKeyValue(hashId,  SHA256.hashSHA256(hashToken));
+
+        pairKeyValueRepository.insert(pairKeyValue);
+
+        return new MessageReturn(200, hashToken);
     }
 
     private Boolean control(String key){

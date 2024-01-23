@@ -1,9 +1,11 @@
 package com.example.demo;
 
+import com.example.demo.RequestMessage.RequestAuth;
+import com.example.demo.RequestMessage.RequestGenerateToken;
+import com.example.demo.RequestMessage.RequestNewAccount;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -25,13 +27,21 @@ public class AuthenticationRouter {
         }
     }
 
-    @PostMapping(path = "/login")
-    public String login(){
-        return "DENTRO login";
+    @PostMapping(path = "/auth")
+    public ResponseEntity<MessageReturn> auth(@Valid @RequestBody RequestAuth requestAuth){
+        try{
+            return new ResponseEntity<>(authenticationService.authentication(requestAuth.getKey(), requestAuth.getValue()), HttpStatus.ACCEPTED);
+        }catch (NullPointerException e){
+            return new ResponseEntity<>(new MessageReturn(300, "not correct structure of the request"), HttpStatus.BAD_REQUEST);
+        }
     }
 
-    @GetMapping("/test")
-    public void getTest(){
-
+    @PostMapping(path ="/generateAuthToken")
+    public ResponseEntity<MessageReturn> generateAPIAuthToken(@Valid @RequestBody RequestGenerateToken requestGenerateToken){
+        try{
+            return new ResponseEntity<>(authenticationService.createAPIAuthToken(requestGenerateToken.getId()), HttpStatus.ACCEPTED);
+        }catch (NullPointerException e){
+            return new ResponseEntity<>(new MessageReturn(300, "not correct structure of the request"), HttpStatus.BAD_REQUEST);
+        }
     }
 }

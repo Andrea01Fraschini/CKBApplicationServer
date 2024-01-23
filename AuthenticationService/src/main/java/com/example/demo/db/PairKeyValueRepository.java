@@ -1,5 +1,6 @@
-package com.example.demo;
+package com.example.demo.db;
 
+import com.example.demo.db.PairKeyValue;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
