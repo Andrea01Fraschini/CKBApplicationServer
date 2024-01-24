@@ -3,7 +3,6 @@ package BersaniChiappiniFraschini.CKBApplicationServer.user;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.List;
 
 @Service
