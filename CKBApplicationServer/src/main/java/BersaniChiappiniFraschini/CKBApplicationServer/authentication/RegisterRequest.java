@@ -12,5 +12,5 @@ public class RegisterRequest {
     private String username;
     private String email;
     private String password;
-    private AccountType account_type;
+    private String account_type;
 }
