@@ -1,5 +1,5 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
-import BersaniChiappiniFraschini.CKBApplicationServer.authentication.AuthenticationResponse;
+import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -15,18 +16,18 @@ import java.util.List;
 public class TournamentService {
     private final TournamentRepository tournamentRepository;
     private final UserDetailsService userDetailsService;
-    public ResponseEntity<TournamentCreationResponse> createTournament(TournamentCreationRequest request){
+    public ResponseEntity<PostResponse> createTournament(TournamentCreationRequest request){
         var auth = SecurityContextHolder.getContext().getAuthentication();
         AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
         if(accountType != AccountType.EDUCATOR){
-            var res = new TournamentCreationResponse("Cannot create tournament as student");
+            var res = new PostResponse("Cannot create tournament as student");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
         }
 
         var title = request.getTitle();
 
         if(tournamentRepository.existsByTitle(title)){
-            var res = new TournamentCreationResponse("Tournament with title %s already exists".formatted(title));;
+            var res = new PostResponse("Tournament with title %s already exists".formatted(title));
             return ResponseEntity.badRequest().body(res);
         }
 
@@ -48,6 +49,6 @@ public class TournamentService {
         // for each user in request.invited_managers, send invite request
         // send notification to all students
 
-        return ResponseEntity.ok(new TournamentCreationResponse());
+        return ResponseEntity.ok(null);
     }
 }
