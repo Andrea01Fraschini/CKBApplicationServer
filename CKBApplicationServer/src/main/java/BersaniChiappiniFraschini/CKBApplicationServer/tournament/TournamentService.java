@@ -1,5 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
+import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import java.util.List;
 public class TournamentService {
     private final TournamentRepository tournamentRepository;
     private final UserDetailsService userDetailsService;
+    private final NotificationService notificationService;
+
     public ResponseEntity<PostResponse> createTournament(TournamentCreationRequest request){
         var auth = SecurityContextHolder.getContext().getAuthentication();
         AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
@@ -47,7 +50,8 @@ public class TournamentService {
         tournamentRepository.insert(tournament);
 
         // for each user in request.invited_managers, send invite request
-        // send notification to all students
+
+        notificationService.sendTournamentCreationNotification(tournament);
 
         return ResponseEntity.ok(null);
     }
