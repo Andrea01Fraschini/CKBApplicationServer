@@ -8,7 +8,7 @@ public enum ReturnCode {
 
     ALREADY_EXISTS(207),
 
-    FAILD(205);
+    FAILED(205);
 
     private final int defaultMessage;
 

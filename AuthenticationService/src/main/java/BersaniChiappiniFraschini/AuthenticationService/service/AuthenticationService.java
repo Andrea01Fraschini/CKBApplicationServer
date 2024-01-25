@@ -75,7 +75,7 @@ public class AuthenticationService {
             }
         }
 
-        return new MessageReturn(ReturnCode.FAILD.getDefaultMessage(), "KO");
+        return new MessageReturn(ReturnCode.FAILED.getDefaultMessage(), "KO");
 
     }
 
