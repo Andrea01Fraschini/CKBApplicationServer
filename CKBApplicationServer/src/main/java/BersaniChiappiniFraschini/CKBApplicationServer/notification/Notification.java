@@ -1,7 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.notification;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.Invite;
-import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
