@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Service that allows to modify and search user information
+ */
 @Service
 @RequiredArgsConstructor
 public class UserService {

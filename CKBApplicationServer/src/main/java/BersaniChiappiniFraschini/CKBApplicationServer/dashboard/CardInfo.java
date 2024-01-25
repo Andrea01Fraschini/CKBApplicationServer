@@ -1,5 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.dashboard;
 
-public interface CardInfo {
-
-}
+/**
+ * Parent interface for the different cardInfo types
+ */
+public interface CardInfo {}

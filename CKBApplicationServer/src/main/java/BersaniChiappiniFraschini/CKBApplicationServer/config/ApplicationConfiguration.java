@@ -15,6 +15,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.regex.Pattern;
 
+
+/**
+ * Configuration class that contains all the bean methods
+ */
 @Configuration
 @RequiredArgsConstructor
 public class ApplicationConfiguration {
@@ -36,8 +40,12 @@ public class ApplicationConfiguration {
             }
         };
     }
+    private boolean isEmail(String string) {
+        String regex = "^(.+)@(.+)$";
+        return Pattern.compile(regex).matcher(string).matches();
+    }
 
-    //TODO change this when auth microservice is up and running
+    //TODO change all of this when auth microservice is up and running
     @Bean
     public AuthenticationProvider authProvider(){
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -50,13 +58,10 @@ public class ApplicationConfiguration {
     public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager(); // I dunno why provider and manager are two separate things but ok
     }
 
-    private boolean isEmail(String string) {
-        String regex = "^(.+)@(.+)$";
-        return Pattern.compile(regex).matcher(string).matches();
-    }
 }

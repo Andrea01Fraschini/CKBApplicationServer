@@ -13,7 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
- * Service that deals with authentication actions (Login and Registration)
+ * Service that performs authentication actions (Login and Registration)
  */
 @Service
 @RequiredArgsConstructor
@@ -42,6 +42,7 @@ public class AuthenticationService {
                 .accountType(account_type)
                 .build();
 
+        // Checks for unique values
         if(repository.existsUserByEmail(user.getEmail())){
             var body = AuthenticationResponse.builder().error_msg("Email already used").build();
             return ResponseEntity.badRequest().body(body);
@@ -51,6 +52,7 @@ public class AuthenticationService {
             var body = AuthenticationResponse.builder().error_msg("Username already taken").build();
             return ResponseEntity.badRequest().body(body);
         }
+
 
         repository.insert(user);
 

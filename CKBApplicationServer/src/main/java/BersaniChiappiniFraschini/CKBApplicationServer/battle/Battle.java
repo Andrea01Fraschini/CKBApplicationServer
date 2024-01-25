@@ -14,5 +14,5 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document
 public class Battle {
     @Id
-    private String id;
+    private String id; //Work in Progress
 }

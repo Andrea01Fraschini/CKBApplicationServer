@@ -11,6 +11,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * HTTP security configuration of the server.
+ */
 @Configuration
 @RequiredArgsConstructor
 @EnableWebSecurity // Used to expose the filterChain bean
@@ -22,12 +25,12 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable) // to avoid any kind of
+                .cors(AbstractHttpConfigurer::disable) // problem with cors exceptions
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/auth/**").permitAll())
+                        auth.requestMatchers("/auth/**").permitAll()) // Do not authenticate auth requests
                 .authorizeHttpRequests(auth ->
-                        auth.anyRequest().authenticated())
+                        auth.anyRequest().authenticated()) // Authenticate everything else
                 .sessionManagement(config ->
                         config.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // No need to store the session
                 .authenticationProvider(authenticationProvider) // Set the authentication provider

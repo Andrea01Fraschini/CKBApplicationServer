@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Service that manages tournaments (will become big)
+ */
 @Service
 @RequiredArgsConstructor
 public class TournamentService {
@@ -20,6 +23,8 @@ public class TournamentService {
     private final NotificationService notificationService;
 
     public ResponseEntity<PostResponse> createTournament(TournamentCreationRequest request){
+
+        // Check for privileges
         var auth = SecurityContextHolder.getContext().getAuthentication();
         AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
         if(accountType != AccountType.EDUCATOR){
@@ -29,15 +34,18 @@ public class TournamentService {
 
         var title = request.getTitle();
 
+        // Check if duplicate
         if(tournamentRepository.existsByTitle(title)){
             var res = new PostResponse("Tournament with title %s already exists".formatted(title));
             return ResponseEntity.badRequest().body(res);
         }
 
-        var username = SecurityContextHolder.getContext().getAuthentication().getName();
+        // Fetch creator's information
+        var username = auth.getName();
         var educator = (User) userDetailsService.loadUserByUsername(username);
         var subscription_deadline = request.getSubscription_deadline();
 
+        // Create new tournament
         Tournament tournament = Tournament.builder()
                 .title(title)
                 .subscription_deadline(subscription_deadline)
@@ -49,6 +57,8 @@ public class TournamentService {
 
         tournamentRepository.insert(tournament);
 
+        // Notify the whole world about this
+        // TODO Run this in a different thread
         notificationService.sendTournamentCreationNotifications(tournament);
 
         // for each user in request.invited_managers, send invite request

@@ -1,16 +1,17 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.dashboard;
-
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Service that gathers information to construct the dashboard view for the user
+ */
 @Service
 @RequiredArgsConstructor
 public class DashboardService {

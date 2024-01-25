@@ -15,7 +15,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 @NoArgsConstructor
 @AllArgsConstructor
 //@Document
-public class Invite {
+public class Invite { // Work In progress
     @Id
     private String id;
     @Indexed

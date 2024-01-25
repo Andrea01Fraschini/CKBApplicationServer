@@ -14,6 +14,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document
 public class Group {
     @Id
-    private String id;
+    private String id; //Work in Progress
 
 }

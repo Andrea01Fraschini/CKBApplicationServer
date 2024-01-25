@@ -11,6 +11,9 @@ import java.util.Date;
 import java.util.function.Function;
 
 
+/**
+ * Service that deals with JWT creation and validation
+ */
 @Service
 public class JwtService {
     private static final String SECRET_KEY = "bc2769b2ea3ce1a069f8a2d5a4c84ffa87c1d38ce267e4ba54293748c35834f3";
