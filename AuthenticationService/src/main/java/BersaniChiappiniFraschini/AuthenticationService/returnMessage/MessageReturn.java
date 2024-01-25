@@ -1,4 +1,4 @@
-package com.example.demo.returnMessage;
+package BersaniChiappiniFraschini.AuthenticationService.returnMessage;
 
 
 import lombok.Builder;

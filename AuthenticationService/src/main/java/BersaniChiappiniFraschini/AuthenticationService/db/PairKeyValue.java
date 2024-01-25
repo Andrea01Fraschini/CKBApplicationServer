@@ -1,4 +1,4 @@
-package com.example.demo.db;
+package BersaniChiappiniFraschini.AuthenticationService.db;
 
 
 import lombok.Data;

@@ -1,4 +1,4 @@
-package com.example.demo;
+package BersaniChiappiniFraschini.AuthenticationService;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

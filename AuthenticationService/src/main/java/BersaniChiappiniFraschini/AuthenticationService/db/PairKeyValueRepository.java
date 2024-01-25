@@ -1,6 +1,6 @@
-package com.example.demo.db;
+package BersaniChiappiniFraschini.AuthenticationService.db;
 
-import com.example.demo.db.PairKeyValue;
+import BersaniChiappiniFraschini.AuthenticationService.db.PairKeyValue;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 

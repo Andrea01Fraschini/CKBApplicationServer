@@ -1,4 +1,4 @@
-package com.example.demo.returnMessage;
+package BersaniChiappiniFraschini.AuthenticationService.returnMessage;
 
 public enum ReturnCode {
     NOT_FORMAT_REQUEST(400),

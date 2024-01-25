@@ -1,11 +1,11 @@
-package com.example.demo;
+package BersaniChiappiniFraschini.AuthenticationService;
 
-import com.example.demo.requestMessage.RequestAuth;
-import com.example.demo.requestMessage.RequestToken;
-import com.example.demo.requestMessage.RequestNewAccount;
-import com.example.demo.returnMessage.MessageReturn;
-import com.example.demo.returnMessage.ReturnCode;
-import com.example.demo.service.AuthenticationService;
+import BersaniChiappiniFraschini.AuthenticationService.requestMessage.RequestAuth;
+import BersaniChiappiniFraschini.AuthenticationService.requestMessage.RequestToken;
+import BersaniChiappiniFraschini.AuthenticationService.requestMessage.RequestNewAccount;
+import BersaniChiappiniFraschini.AuthenticationService.returnMessage.MessageReturn;
+import BersaniChiappiniFraschini.AuthenticationService.returnMessage.ReturnCode;
+import BersaniChiappiniFraschini.AuthenticationService.service.AuthenticationService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

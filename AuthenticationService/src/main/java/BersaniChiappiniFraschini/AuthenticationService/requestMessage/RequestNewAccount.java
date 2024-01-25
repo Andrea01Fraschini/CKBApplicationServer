@@ -1,4 +1,4 @@
-package com.example.demo.requestMessage;
+package BersaniChiappiniFraschini.AuthenticationService.requestMessage;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

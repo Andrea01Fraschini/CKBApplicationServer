@@ -1,2 +1,2 @@
 /.idea/
-/AuthenticationService/src/main/resources/.env 
+./AuthenticationService/src/main/resources/.env 

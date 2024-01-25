@@ -1,7 +1,7 @@
-package com.example.demo.security;
+package BersaniChiappiniFraschini.AuthenticationService.security;
 
-import com.example.demo.returnMessage.MessageReturn;
-import com.example.demo.returnMessage.ReturnCode;
+import BersaniChiappiniFraschini.AuthenticationService.returnMessage.MessageReturn;
+import BersaniChiappiniFraschini.AuthenticationService.returnMessage.ReturnCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;

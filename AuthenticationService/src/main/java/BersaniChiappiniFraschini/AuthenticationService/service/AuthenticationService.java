@@ -1,10 +1,10 @@
-package com.example.demo.service;
+package BersaniChiappiniFraschini.AuthenticationService.service;
 
-import com.example.demo.returnMessage.MessageReturn;
-import com.example.demo.returnMessage.ReturnCode;
-import com.example.demo.SHA256;
-import com.example.demo.db.PairKeyValue;
-import com.example.demo.db.PairKeyValueRepository;
+import BersaniChiappiniFraschini.AuthenticationService.returnMessage.MessageReturn;
+import BersaniChiappiniFraschini.AuthenticationService.returnMessage.ReturnCode;
+import BersaniChiappiniFraschini.AuthenticationService.SHA256;
+import BersaniChiappiniFraschini.AuthenticationService.db.PairKeyValue;
+import BersaniChiappiniFraschini.AuthenticationService.db.PairKeyValueRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
