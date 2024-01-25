@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface UserRepository extends MongoRepository<User, String> {
     Optional<User> findUserByEmail(String email); //Magically implemented by spring
     Optional<User> findUserByUsername(String username);
+    Collection<User> findUsersByUsernameLike(String username);
     boolean existsUserByEmail(String email);
     boolean existsUserByUsername(String email);
     @Query(" { 'username': {$regex : ?1, $options: 'i'}, 'accountType': ?0 } ")

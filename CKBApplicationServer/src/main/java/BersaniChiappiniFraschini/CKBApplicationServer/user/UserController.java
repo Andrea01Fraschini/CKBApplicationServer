@@ -16,4 +16,25 @@ public class UserController {
     ){
         return userService.searchEducatorByName(name);
     }
+
+    @GetMapping("/student")
+    @ResponseBody
+    public List<String> searchStudentByName(
+            @RequestParam(value = "name") String name
+    ){
+        return userService.searchStudentByName(name);
+    }
+
+    @GetMapping("/user")
+    @ResponseBody
+    public List<UsernameAndType> searchUserByName(
+            @RequestParam(value = "name") String name
+    ){
+        return userService.searchUserByName(name);
+    }
+
+    public record UsernameAndType(
+      String username,
+      String account_type
+    ){}
 }
