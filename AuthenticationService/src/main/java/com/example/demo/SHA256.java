@@ -23,7 +23,6 @@ public class SHA256 {
 
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            // Gestire l'eccezione se l'algoritmo non è disponibile
             e.printStackTrace();
             return null;
         }

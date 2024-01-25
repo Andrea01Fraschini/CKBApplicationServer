@@ -7,12 +7,18 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="demo" />
+        <module name="AuthenticationService" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="CKBApplicationServer" target="17" />
+      <module name="demo" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="AuthenticationService" options="-parameters" />
+      <module name="CKBApplicationServer" options="-parameters" />
       <module name="demo" options="-parameters" />
     </option>
   </component>

@@ -1,4 +1,4 @@
-package com.example.demo.RequestMessage;
+package com.example.demo.requestMessage;
 
 import lombok.Data;
 
@@ -6,11 +6,8 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 @Data
-public class RequestAuth {
+public class RequestToken {
     @NotNull
     @NotBlank
-    private String key;
-    @NotNull
-    @NotBlank
-    private String value;
+    private String id;
 }

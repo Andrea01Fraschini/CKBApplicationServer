@@ -8,11 +8,11 @@
 		<version>3.2.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.example</groupId>
-	<artifactId>demo</artifactId>
+	<groupId>BersaniChiappiniFraschini</groupId>
+	<artifactId>AuthenticationService</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>demo</name>
-	<description>Demo project for Spring Boot</description>
+	<name>AuthenticationService</name>
+	<description>AuthenticationService for Code Kata Battle</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>

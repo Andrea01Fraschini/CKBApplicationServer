@@ -1,8 +1,11 @@
 package com.example.demo;
 
-import com.example.demo.RequestMessage.RequestAuth;
-import com.example.demo.RequestMessage.RequestGenerateToken;
-import com.example.demo.RequestMessage.RequestNewAccount;
+import com.example.demo.requestMessage.RequestAuth;
+import com.example.demo.requestMessage.RequestToken;
+import com.example.demo.requestMessage.RequestNewAccount;
+import com.example.demo.returnMessage.MessageReturn;
+import com.example.demo.returnMessage.ReturnCode;
+import com.example.demo.service.AuthenticationService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +24,8 @@ public class AuthenticationRouter {
         try {
             // insert the reading of the body
             return new ResponseEntity<>(authenticationService.insertNewAccount(request.getUsername(), request.getEmail(), request.getPassword()), HttpStatus.CREATED);
-            // return new ResponseEntity<>(request,HttpStatus.BAD_REQUEST);
         }catch (NullPointerException e){
-            return new ResponseEntity<>(new MessageReturn(300, "not correct structure of the request"), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new MessageReturn(ReturnCode.NOT_FORMAT_REQUEST.getDefaultMessage(), "not correct structure of the request"), HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -32,16 +34,18 @@ public class AuthenticationRouter {
         try{
             return new ResponseEntity<>(authenticationService.authentication(requestAuth.getKey(), requestAuth.getValue()), HttpStatus.ACCEPTED);
         }catch (NullPointerException e){
-            return new ResponseEntity<>(new MessageReturn(300, "not correct structure of the request"), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new MessageReturn(ReturnCode.NOT_FORMAT_REQUEST.getDefaultMessage(), "not correct structure of the request"), HttpStatus.BAD_REQUEST);
         }
     }
 
     @PostMapping(path ="/generateAuthToken")
-    public ResponseEntity<MessageReturn> generateAPIAuthToken(@Valid @RequestBody RequestGenerateToken requestGenerateToken){
+    public ResponseEntity<MessageReturn> generateAPIAuthToken(@Valid @RequestBody RequestToken requestToken){
         try{
-            return new ResponseEntity<>(authenticationService.createAPIAuthToken(requestGenerateToken.getId()), HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(authenticationService.createAPIAuthToken(requestToken.getId()), HttpStatus.ACCEPTED);
         }catch (NullPointerException e){
-            return new ResponseEntity<>(new MessageReturn(300, "not correct structure of the request"), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new MessageReturn(ReturnCode.NOT_FORMAT_REQUEST.getDefaultMessage(), "not correct structure of the request"), HttpStatus.BAD_REQUEST);
         }
     }
+
+    // PER GET TOKEN ASPETTARE
 }

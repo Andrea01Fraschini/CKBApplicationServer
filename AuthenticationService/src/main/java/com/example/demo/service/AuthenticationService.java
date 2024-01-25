@@ -1,5 +1,8 @@
-package com.example.demo;
+package com.example.demo.service;
 
+import com.example.demo.returnMessage.MessageReturn;
+import com.example.demo.returnMessage.ReturnCode;
+import com.example.demo.SHA256;
 import com.example.demo.db.PairKeyValue;
 import com.example.demo.db.PairKeyValueRepository;
 import lombok.AllArgsConstructor;
@@ -40,12 +43,12 @@ public class AuthenticationService {
                 pairKeyValueRepository.insert(user);
                 pairKeyValueRepository.insert(emailData);
 
-                return new MessageReturn(200, "OK");
+                return new MessageReturn(ReturnCode.SUCCESS.getDefaultMessage(), "OK");
             }else {
-                return new MessageReturn(404, "Hashing process didn't work");
+                return new MessageReturn(ReturnCode.NOT_WORK_HASHING.getDefaultMessage(), "Hashing process didn't work");
             }
         }else{
-            return new MessageReturn(400, "Value already exists");
+            return new MessageReturn(ReturnCode.ALREADY_EXISTS.getDefaultMessage(), "Value already exists");
         }
     }
 
@@ -61,42 +64,40 @@ public class AuthenticationService {
         if( hashKey == null && hashValue == null){
             // qui ritornare errore interno => con un http....
             //TODO POSSO SOTITUIRLO CON UN'ECCEZIONE CHE MANDO IO VEDI CARTELLA SECURITY => SI FARE COSì
-            return new MessageReturn(404, "Hashing process didn't work");
+            return new MessageReturn(ReturnCode.NOT_WORK_HASHING.getDefaultMessage(), "Hashing process didn't work");
         }
 
         Optional<PairKeyValue> pairKeyValue = pairKeyValueRepository.findPairKeyValueByKey(hashKey);
 
         if(pairKeyValue.isPresent()) {
             if (pairKeyValue.get().getValue().equals(hashValue)) {
-                return new MessageReturn(200, "OK");
+                return new MessageReturn(ReturnCode.SUCCESS.getDefaultMessage(), "OK");
             }
         }
 
-        return new MessageReturn(205, "KO");
+        return new MessageReturn(ReturnCode.FAILD.getDefaultMessage(), "KO");
 
     }
 
     public MessageReturn createAPIAuthToken(String id){
         String hashId = SHA256.hashSHA256(id);
+        Random random = new Random();
 
-        if(hashId == null){
-            return new MessageReturn(404, "Hashing process didn't work");
+        String hashToken = SHA256.hashSHA256(id+String.valueOf(random.nextInt()));
+
+        if(hashId == null || hashToken == null){
+            return new MessageReturn(ReturnCode.NOT_WORK_HASHING.getDefaultMessage(), "Hashing process didn't work");
         }
 
         if(!control(hashId)){
-            return new MessageReturn(400, "token already exists");
+            return new MessageReturn(ReturnCode.ALREADY_EXISTS.getDefaultMessage(), "token already exists");
         }
 
-        Random random = new Random();
-        String hashToken = SHA256.hashSHA256(id+String.valueOf(random.nextInt()));
-
-        //manda un errore
-        assert hashToken != null;
         PairKeyValue pairKeyValue = new PairKeyValue(hashId,  SHA256.hashSHA256(hashToken));
 
         pairKeyValueRepository.insert(pairKeyValue);
 
-        return new MessageReturn(200, hashToken);
+        return new MessageReturn(ReturnCode.SUCCESS.getDefaultMessage(), hashToken);
     }
 
     private Boolean control(String key){
