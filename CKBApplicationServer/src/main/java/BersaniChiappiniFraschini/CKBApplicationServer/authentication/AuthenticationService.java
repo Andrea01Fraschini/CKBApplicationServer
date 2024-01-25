@@ -12,6 +12,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service that deals with authentication actions (Login and Registration)
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
@@ -23,6 +26,8 @@ public class AuthenticationService {
 
     public ResponseEntity<AuthenticationResponse> register(RegisterRequest request) {
         AccountType account_type;
+
+        //Check if valid account type
         try{
             account_type = AccountType.valueOf(request.getAccount_type());
         }catch (Exception ignored){

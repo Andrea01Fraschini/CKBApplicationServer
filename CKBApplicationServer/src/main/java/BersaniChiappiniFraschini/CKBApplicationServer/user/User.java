@@ -1,9 +1,9 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.user;
+import BersaniChiappiniFraschini.CKBApplicationServer.notification.Notification;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -27,6 +27,7 @@ public class User implements UserDetails {
     private String email;
     private String password;
     private AccountType accountType;
+    private List<Notification> notifications;
 
     // Spring uses the methods of UserDetails for authentication,
     // note that many methods are already implemented by Lombok

@@ -23,7 +23,6 @@ public class DemoController {
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
 
-        service.testEmailSend();
         return ResponseEntity.ok("Hello %s".formatted(name));
     }
 

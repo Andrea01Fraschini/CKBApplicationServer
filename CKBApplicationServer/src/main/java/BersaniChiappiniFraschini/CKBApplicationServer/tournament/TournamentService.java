@@ -49,9 +49,9 @@ public class TournamentService {
 
         tournamentRepository.insert(tournament);
 
-        // for each user in request.invited_managers, send invite request
+        notificationService.sendTournamentCreationNotifications(tournament);
 
-        notificationService.sendTournamentCreationNotification(tournament);
+        // for each user in request.invited_managers, send invite request
 
         return ResponseEntity.ok(null);
     }

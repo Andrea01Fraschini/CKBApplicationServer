@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationDetails {
+public class NotificationDetails { // Used for responses
     private String id;
     private String message;
     private String type;
