@@ -1,5 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.notification;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserService;
@@ -31,6 +32,20 @@ public class NotificationService {
 
         for(var email : userRepository.getAllStudentsEmails()){
             sendNotification(email.getEmail(), message);
+        }
+    }
+
+    /**
+     * Sends a notification to all subscribed students in the tournament of a new battle
+     * @param battle new battle
+     * @param tournament tournament where the battle can ba found
+     */
+    public void sendBattleCreationNotification(Battle battle, Tournament tournament) {
+        String message = "A battle titled '%s' has been created in tournament '%s'."
+                .formatted(battle.getTitle(), tournament.getTitle());
+
+        for (var user : tournament.getSubscribed_users()) {
+            sendNotification(user.getEmail(), message);
         }
     }
 
