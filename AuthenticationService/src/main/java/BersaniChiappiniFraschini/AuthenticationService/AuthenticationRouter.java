@@ -11,7 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 @RestController
@@ -27,7 +30,6 @@ public class AuthenticationRouter {
     @PostMapping(path = "/registerNewAccount")
     public ResponseEntity<MessageReturn> registerNewAccount(@Valid @RequestBody RequestNewAccount request){
         try {
-            // insert the reading of the body
             return new ResponseEntity<>(authenticationService.insertNewAccount(request.getUsername(), request.getEmail(), request.getPassword()), HttpStatus.CREATED);
         }catch (NullPointerException e){
             return new ResponseEntity<>(new MessageReturn(ReturnCode.NOT_FORMAT_REQUEST.getDefaultMessage(), "not correct structure of the request"), HttpStatus.BAD_REQUEST);
@@ -51,6 +53,4 @@ public class AuthenticationRouter {
             return new ResponseEntity<>(new MessageReturn(ReturnCode.NOT_FORMAT_REQUEST.getDefaultMessage(), "not correct structure of the request"), HttpStatus.BAD_REQUEST);
         }
     }
-
-    // PER GET TOKEN ASPETTARE
 }

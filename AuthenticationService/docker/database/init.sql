@@ -1,0 +1,9 @@
+CREATE DATABASE IF NOT EXISTS AUTH;
+USE AUTH;
+
+CREATE TABLE keyValue
+(
+    id     INT AUTO_INCREMENT PRIMARY KEY,
+    key_   VARCHAR(255) not null,
+    value_ VARCHAR(255) not null
+);
