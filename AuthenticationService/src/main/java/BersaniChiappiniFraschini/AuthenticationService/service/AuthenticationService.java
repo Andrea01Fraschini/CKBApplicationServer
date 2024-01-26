@@ -3,19 +3,23 @@ package BersaniChiappiniFraschini.AuthenticationService.service;
 import BersaniChiappiniFraschini.AuthenticationService.returnMessage.MessageReturn;
 import BersaniChiappiniFraschini.AuthenticationService.returnMessage.ReturnCode;
 import BersaniChiappiniFraschini.AuthenticationService.SHA256;
-import BersaniChiappiniFraschini.AuthenticationService.db.PairKeyValue;
-import BersaniChiappiniFraschini.AuthenticationService.db.PairKeyValueRepository;
-import lombok.AllArgsConstructor;
+import BersaniChiappiniFraschini.AuthenticationService.persistence.PairKeyValue;
+import BersaniChiappiniFraschini.AuthenticationService.persistence.PairKeyValueRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.Random;
 
-@AllArgsConstructor
 @Service
 public class AuthenticationService {
 
     private final PairKeyValueRepository pairKeyValueRepository;
+
+    @Autowired
+    public AuthenticationService(PairKeyValueRepository pairKeyValueRepository) {
+        this.pairKeyValueRepository = pairKeyValueRepository;
+    }
 
     /**
      * Method to insert new key value in the db, but first it'll check if the kay already exists
@@ -37,11 +41,11 @@ public class AuthenticationService {
         if(control(hashUser) && control(hashEmail)){
 
             if(hashUser != null && hashEmail!= null && hashPassword != null) {
-                PairKeyValue user = new PairKeyValue(hashUser, hashPassword);
-                PairKeyValue emailData = new PairKeyValue(hashEmail, hashPassword);
+                PairKeyValue user = PairKeyValue.builder().key(hashUser).value(hashPassword).build();
+                PairKeyValue emailData = PairKeyValue.builder().key(hashEmail).value(hashPassword).build();
 
-                pairKeyValueRepository.insert(user);
-                pairKeyValueRepository.insert(emailData);
+                pairKeyValueRepository.save(user);
+                pairKeyValueRepository.save(emailData);
 
                 return new MessageReturn(ReturnCode.SUCCESS.getDefaultMessage(), "OK");
             }else {
@@ -93,9 +97,9 @@ public class AuthenticationService {
             return new MessageReturn(ReturnCode.ALREADY_EXISTS.getDefaultMessage(), "token already exists");
         }
 
-        PairKeyValue pairKeyValue = new PairKeyValue(hashId,  SHA256.hashSHA256(hashToken));
+        PairKeyValue pairKeyValue = PairKeyValue.builder().key(hashId).value(SHA256.hashSHA256(hashToken)).build();
 
-        pairKeyValueRepository.insert(pairKeyValue);
+        pairKeyValueRepository.save(pairKeyValue);
 
         return new MessageReturn(ReturnCode.SUCCESS.getDefaultMessage(), hashToken);
     }

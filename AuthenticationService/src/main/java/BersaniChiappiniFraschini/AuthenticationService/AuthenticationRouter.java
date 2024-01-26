@@ -7,6 +7,7 @@ import BersaniChiappiniFraschini.AuthenticationService.returnMessage.MessageRetu
 import BersaniChiappiniFraschini.AuthenticationService.returnMessage.ReturnCode;
 import BersaniChiappiniFraschini.AuthenticationService.service.AuthenticationService;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +16,13 @@ import javax.validation.Valid;
 
 @RestController
 @RequestMapping("api/v1")
-@AllArgsConstructor
 public class AuthenticationRouter {
-    private AuthenticationService authenticationService;
+    private final AuthenticationService authenticationService;
+
+    @Autowired
+    public AuthenticationRouter(AuthenticationService authenticationService) {
+        this.authenticationService = authenticationService;
+    }
 
     @PostMapping(path = "/registerNewAccount")
     public ResponseEntity<MessageReturn> registerNewAccount(@Valid @RequestBody RequestNewAccount request){
