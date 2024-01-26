@@ -4,12 +4,17 @@ import BersaniChiappiniFraschini.CKBApplicationServer.config.JwtService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -20,10 +25,10 @@ import org.springframework.stereotype.Service;
 public class AuthenticationService {
     private final UserRepository repository;
     private final UserDetailsService userDetailsService;
-    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
+    private final Environment environment;
 
+    // ================================= REGISTRATION =================================
     public ResponseEntity<AuthenticationResponse> register(RegisterRequest request) {
         AccountType account_type;
 
@@ -38,7 +43,6 @@ public class AuthenticationService {
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
                 .accountType(account_type)
                 .build();
 
@@ -53,27 +57,76 @@ public class AuthenticationService {
             return ResponseEntity.badRequest().body(body);
         }
 
-
+        storePasswordInMicroservice(user.getUsername(), user.getEmail(), request.getPassword());
         repository.insert(user);
 
         String jwt = jwtService.generateJWT(user);
         return ResponseEntity.ok(AuthenticationResponse.builder().token(jwt).build());
     }
 
+    private void storePasswordInMicroservice(String username, String email, String password){
+        sendPostRequest("/registerNewAccount", new StorePasswordRequest(username, email, password));
+    }
+
+
+    // ================================= LOGIN =================================
     public ResponseEntity<AuthenticationResponse> login(LoginRequest request) {
-        var token = new UsernamePasswordAuthenticationToken(
-                request.getEmail_or_username(),
-                request.getPassword()
-        );
+        String key = request.getEmail_or_username();
+        String value = request.getPassword();
 
-        // If auth fails, an exception is thrown and a 403 response is returned
-        authenticationManager.authenticate(token);
+        if (!authenticate(key, value)){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(AuthenticationResponse.builder()
+                            .error_msg("Login failed")
+                            .build());
+        }
 
-        // Otherwise, the user is authenticated and the token is generated
         var user = userDetailsService.loadUserByUsername(request.getEmail_or_username());
         String jwt = jwtService.generateJWT(user);
         return ResponseEntity.ok(AuthenticationResponse.builder().token(jwt).build());
     }
 
+    private boolean authenticate(String username_or_email, String password){
+        HttpResponse<JsonNode> response = sendPostRequest("/auth",
+                new AuthRequest(username_or_email, password));
+        return response.getStatus() == HttpStatus.ACCEPTED.value();
+    }
+
+
+    // Microservice communication
+    private HttpResponse<JsonNode> sendPostRequest(String method, Object requestBody){
+        String microservice_url = environment.getProperty("auth.microservice.url");
+        try {
+            Unirest.setObjectMapper(new com.mashape.unirest.http.ObjectMapper() {
+                final ObjectMapper mapper = new ObjectMapper();
+                @SneakyThrows
+                public String writeValue(Object value) {
+                    return mapper.writeValueAsString(value);
+                }
+                @SneakyThrows
+                public <T> T readValue(String value, Class<T> valueType) {
+                    return mapper.readValue(value, valueType);
+                }
+            });
+
+            return Unirest.post(microservice_url+method)
+                    .header("Content-Type", "application/json")
+                    .body(requestBody)
+                    .asJson();
+        } catch (UnirestException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private record StorePasswordRequest(
+            String username,
+            String email,
+            String password
+    ){}
+
+    private record AuthRequest(
+            String key,
+            String value
+    ){}
 
 }
