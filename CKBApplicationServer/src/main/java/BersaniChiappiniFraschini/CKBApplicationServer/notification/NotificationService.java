@@ -1,6 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.notification;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
+import BersaniChiappiniFraschini.CKBApplicationServer.invite.Invite;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserService;
@@ -47,6 +48,13 @@ public class NotificationService {
         for (var user : tournament.getSubscribed_users()) {
             sendNotification(user.getEmail(), message);
         }
+    }
+
+    public void sendInviteNotification(Invite invite) {
+        String message = "You received an invite from %s"
+                .formatted(invite.getSender().getUsername());
+
+        sendNotification(invite.getReceiver().getEmail(), message);
     }
 
     /**

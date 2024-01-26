@@ -21,4 +21,11 @@ public class BattleController {
     ) {
         return battleService.createBattle(request);
     }
+
+    @PostMapping("/enroll")
+    public ResponseEntity<PostResponse> enrollGroup(
+            @RequestBody BattleEnrollmentRequest request
+    ) {
+        return battleService.enrollGroup(request);
+    }
 }
