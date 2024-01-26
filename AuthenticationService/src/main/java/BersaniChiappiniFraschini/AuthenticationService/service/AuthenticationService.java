@@ -8,6 +8,7 @@ import BersaniChiappiniFraschini.AuthenticationService.persistence.PairKeyValueR
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.Optional;
 import java.util.Random;
 
@@ -22,30 +23,28 @@ public class AuthenticationService {
     }
 
     /**
-     * Method to insert new key value in the db, but first it'll check if the kay already exists
-     * in this case the user can log in with username or e-mail
+     * Inserts a new account into the system with the provided information.
      *
-     * @param username
-     * @param email
-     * @param password
+     * @param username The username for the new account.
+     * @param email    The email address associated with the new account.
+     * @param password The password for the new account.
+     * @return A MessageReturn object representing the result of the operation.
+     *         - If the insertion is successful, it returns a success message.
+     *         - If hashing the password fails, it returns an error message.
+     *         - If the username or email already exists in the system, it returns an error message.
      */
+    @Transactional
     public MessageReturn insertNewAccount(String username, String email, String password) {
-        String hashUser = SHA256.hashSHA256(username);
-        String hashEmail = SHA256.hashSHA256(email);
         String hashPassword = SHA256.hashSHA256(password);
 
-        //example of key => username, email of the user or id of the group
-        //all values are encrypt in hash-256 look at the SHA256 class
+        if(control(username) && control(email)){
 
-        //here It controls if the pair key1 and key2 already exists
-        if(control(hashUser) && control(hashEmail)){
+            if(hashPassword != null) {
+                //PairKeyValue user = PairKeyValue.builder().key(username).value(hashPassword).build();
+                //PairKeyValue emailData = PairKeyValue.builder().key(email).value(hashPassword).build();
 
-            if(hashUser != null && hashEmail!= null && hashPassword != null) {
-                PairKeyValue user = PairKeyValue.builder().key(hashUser).value(hashPassword).build();
-                PairKeyValue emailData = PairKeyValue.builder().key(hashEmail).value(hashPassword).build();
-
-                pairKeyValueRepository.save(user);
-                pairKeyValueRepository.save(emailData);
+                // pairKeyValueRepository.save(user);
+                // pairKeyValueRepository.save(emailData);
 
                 return new MessageReturn(ReturnCode.SUCCESS.getDefaultMessage(), "OK");
             }else {
@@ -57,21 +56,24 @@ public class AuthenticationService {
     }
 
     /**
-     * Return true if the authentication is correct false otherwise
-     * this is for the authentication
-     * @param key
+     * Authenticates a user by verifying the provided key-value pair against stored data.
+     *
+     * @param key   The key used for authentication (e.g., username or email).
+     * @param value The value associated with the provided key (e.g., password).
+     * @return A MessageReturn object representing the result of the authentication attempt.
+     *         - If the hashing of the provided value fails, it returns an error message.
+     *         - If the provided key is found and the hashed value matches, it returns a success message.
+     *         - If the authentication fails (key not found or hashed values do not match), it returns a failure message.
      */
+    @Transactional
     public MessageReturn authentication(String key, String value){
-        String hashKey = SHA256.hashSHA256(key);
         String hashValue = SHA256.hashSHA256(value);
 
-        if( hashKey == null && hashValue == null){
-            // qui ritornare errore interno => con un http....
-            //TODO POSSO SOTITUIRLO CON UN'ECCEZIONE CHE MANDO IO VEDI CARTELLA SECURITY => SI FARE COSì
+        if(hashValue == null){
             return new MessageReturn(ReturnCode.NOT_WORK_HASHING.getDefaultMessage(), "Hashing process didn't work");
         }
 
-        Optional<PairKeyValue> pairKeyValue = pairKeyValueRepository.findPairKeyValueByKey(hashKey);
+        Optional<PairKeyValue> pairKeyValue = pairKeyValueRepository.findPairKeyValueByKey(key);
 
         if(pairKeyValue.isPresent()) {
             if (pairKeyValue.get().getValue().equals(hashValue)) {
@@ -83,22 +85,31 @@ public class AuthenticationService {
 
     }
 
+    /**
+     * Creates an API authentication token for the provided group identifier.
+     *
+     * @param id The group identifier for whom the API authentication token is created.
+     * @return A MessageReturn object representing the result of the token creation.
+     *         - If the token is successfully created and stored, it returns a success message with the generated token.
+     *         - If hashing the token or user identifier fails, it returns an error message.
+     *         - If the user identifier already exists, it returns an error message indicating that the token already exists.
+     */
+    @Transactional
     public MessageReturn createAPIAuthToken(String id){
-        String hashId = SHA256.hashSHA256(id);
         Random random = new Random();
 
         String hashToken = SHA256.hashSHA256(id+String.valueOf(random.nextInt()));
 
-        if(hashId == null || hashToken == null){
+        if(hashToken == null){
             return new MessageReturn(ReturnCode.NOT_WORK_HASHING.getDefaultMessage(), "Hashing process didn't work");
         }
 
-        if(!control(hashId)){
+        if(!control(id)){
             return new MessageReturn(ReturnCode.ALREADY_EXISTS.getDefaultMessage(), "token already exists");
         }
 
-        PairKeyValue pairKeyValue = PairKeyValue.builder().key(hashId).value(SHA256.hashSHA256(hashToken)).build();
-
+        // PairKeyValue pairKeyValue = PairKeyValue.builder().key(id).value(SHA256.hashSHA256(hashToken)).build();
+        PairKeyValue pairKeyValue = new PairKeyValue(id, SHA256.hashSHA256(hashToken));
         pairKeyValueRepository.save(pairKeyValue);
 
         return new MessageReturn(ReturnCode.SUCCESS.getDefaultMessage(), hashToken);
