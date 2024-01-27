@@ -58,7 +58,7 @@ public class AuthenticationService {
             return ResponseEntity.badRequest().body(body);
         }
 
-        // storePasswordInMicroservice(user.getUsername(), user.getEmail(), request.getPassword());
+        storePasswordInMicroservice(user.getUsername(), user.getEmail(), request.getPassword());
         repository.insert(user);
 
         String jwt = jwtService.generateJWT(user);
@@ -75,13 +75,13 @@ public class AuthenticationService {
         String key = request.getEmail_or_username();
         String value = request.getPassword();
 
-        /*
+
         if (!authenticate(key, value)){
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(AuthenticationResponse.builder()
                             .error_msg("Login failed")
                             .build());
-        }*/
+        }
 
         var user = userDetailsService.loadUserByUsername(request.getEmail_or_username());
         String jwt = jwtService.generateJWT(user);
