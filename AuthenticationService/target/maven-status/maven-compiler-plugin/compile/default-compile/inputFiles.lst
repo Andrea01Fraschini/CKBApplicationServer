@@ -1,0 +1,12 @@
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/requestMessage/RequestNewAccount.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/service/AuthenticationService.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/returnMessage/MessageReturn.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/AuthenticationRouter.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/AuthenticationServiceApplication.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/persistence/PairKeyValue.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/requestMessage/RequestToken.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/SHA256.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/requestMessage/RequestAuth.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/returnMessage/ReturnCode.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/persistence/PairKeyValueRepository.java
+/Users/michelebersani/Desktop/Università_politecnico/MAGISTRALE/ANNO_1/SW2/PROGETTO/MyFORK/AuthenticationService/src/main/java/BersaniChiappiniFraschini/AuthenticationService/security/RequestExceptionHandler.java

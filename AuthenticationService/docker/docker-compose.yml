@@ -1,0 +1,17 @@
+version: '3.1'
+
+services:
+  server:
+    build:
+      context: ./server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+
+  database:
+    build:
+      context: ./database
+    ports:
+      - "3306:3306"
+    command: [ "--init-file", "/docker-entrypoint-initdb.d/init.sql" ]
