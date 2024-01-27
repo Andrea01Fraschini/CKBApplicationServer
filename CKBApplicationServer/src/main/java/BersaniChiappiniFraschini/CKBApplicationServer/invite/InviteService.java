@@ -1,8 +1,11 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.invite;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
+import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
@@ -44,6 +47,12 @@ public class InviteService {
         var receiver = (User) userDetailsService.loadUserByUsername(request.getUsername());
         var tournament = tournamentRepository.findTournamentByTitle(request.getTournament_title());
 
+        sendManagerInvite(sender, receiver, tournament);
+
+        return ResponseEntity.ok(null);
+    }
+
+    public void sendManagerInvite(User sender, User receiver, Tournament tournament) {
         Invite invite = Invite.builder()
                 .id(ObjectId.get().toString())
                 .sender(sender.getUsername())
@@ -53,10 +62,8 @@ public class InviteService {
                 .build();
 
         userService.addInvite(invite);
-        tournamentService.inviteManager(request.getTournament_title(), receiver);
+        tournamentService.inviteManager(tournament.getTitle(), receiver);
         notificationService.sendInviteNotification(sender, receiver);
-
-        return ResponseEntity.ok(null);
     }
 
     public ResponseEntity<PostResponse> sendGroupInvite(GroupInviteRequest request) {
@@ -92,19 +99,23 @@ public class InviteService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
         }
 
+        sendGroupInvite(sender, receiver, tournament, battle.get(), context.get());
+
+        return ResponseEntity.ok(null);
+    }
+
+    public void sendGroupInvite(User sender, User receiver, Tournament tournament, Battle battle, Group group) {
         Invite invite = Invite.builder()
                 .id(ObjectId.get().toString())
                 .sender(sender.getUsername())
                 .receiver(receiver.getUsername())
-                .group_id(context.get().getId())
+                .group_id(group.getId())
                 .tournament_id(tournament.getId()) // used to facilitate updating
                 .build();
 
         userService.addInvite(invite);
-        groupService.inviteStudent(request.getTournament_title(), request.getBattle_title(), context.get().getId(), receiver);
+        groupService.inviteStudent(tournament.getTitle(), battle.getTitle(), group.getId(), receiver);
         notificationService.sendInviteNotification(sender, receiver);
-
-        return ResponseEntity.ok(null);
     }
 
     public ResponseEntity<PostResponse> updateInviteStatus(InviteStatusUpdateRequest request) {
@@ -154,7 +165,7 @@ public class InviteService {
         if (accepted) {
             tournamentService.acceptManagerInvite(invite.getTournament_id(), user);
         } else {
-            tournamentService.rejectGroupInvite(invite.getTournament_id(), user);
+            tournamentService.rejectManagerInvite(invite.getTournament_id(), user);
         }
     }
 }
