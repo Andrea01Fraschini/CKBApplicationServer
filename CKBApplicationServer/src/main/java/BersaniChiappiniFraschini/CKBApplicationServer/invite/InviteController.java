@@ -20,4 +20,16 @@ public class InviteController {
     ) {
         return inviteService.sendGroupInvite(request);
     }
+
+    @PostMapping("/tournament")
+    public ResponseEntity<PostResponse> inviteToTournament() {
+        return inviteService.sendManagerInvite(null, null, null);
+    }
+
+    @PostMapping("/group/update")
+    public ResponseEntity<PostResponse> updateGroupInviteStatus(
+            @RequestBody InviteStatusUpdateRequest request
+    ) {
+        return inviteService.updateGroupInviteStatus(request); 
+    }
 }

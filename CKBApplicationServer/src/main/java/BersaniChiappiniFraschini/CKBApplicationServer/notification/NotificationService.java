@@ -1,11 +1,12 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.notification;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
-import BersaniChiappiniFraschini.CKBApplicationServer.invite.Invite;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
+import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -50,11 +51,18 @@ public class NotificationService {
         }
     }
 
-    public void sendInviteNotification(Invite invite) {
+    public void sendInviteNotification(User sender, User receiver) {
         String message = "You received an invite from %s"
-                .formatted(invite.getSender().getUsername());
+                .formatted(sender.getUsername());
 
-        sendNotification(invite.getReceiver().getEmail(), message);
+        sendNotification(receiver.getEmail(), message);
+    }
+
+    public void sendInviteStatusUpdate(User sender, boolean accepted) {
+        String message = "%s has %s your invite"
+                .formatted(sender.getUsername(), accepted ? "accepted" : "rejected");
+
+        sendNotification(sender.getEmail(), message);
     }
 
     /**
@@ -64,6 +72,7 @@ public class NotificationService {
      */
     public void sendNotification(String user_email, String message){
         var notification = Notification.builder()
+                .id(ObjectId.get().toString())
                 .message(message)
                 .is_closed(false)
                 .creation_date(new Date(System.currentTimeMillis()))

@@ -50,7 +50,7 @@ public class UserService {
     public void addInvite(Invite invite){
         var update = new Update();
         update.push("invites", invite);
-        var criteria = Criteria.where("username").is(invite.getSender().getUsername());
+        var criteria = Criteria.where("username").is(invite.getReceiver());
         mongoTemplate.updateFirst(Query.query(criteria), update, "user");
     }
 }

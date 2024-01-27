@@ -1,4 +1,5 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.user;
+import BersaniChiappiniFraschini.CKBApplicationServer.invite.Invite;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.Notification;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +29,7 @@ public class User implements UserDetails {
     private String password;
     private AccountType accountType;
     private List<Notification> notifications;
+    private List<Invite> invites;
 
     // Spring uses the methods of UserDetails for authentication,
     // note that many methods are already implemented by Lombok

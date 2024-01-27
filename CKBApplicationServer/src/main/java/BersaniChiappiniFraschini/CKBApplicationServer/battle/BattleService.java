@@ -8,6 +8,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentServi
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -65,6 +66,7 @@ public class BattleService {
 
         // Create new battle
         Battle battle = Battle.builder()
+                .id(ObjectId.get().toString())
                 .title(battle_title)
                 .min_group_size(min_size)
                 .max_group_size(max_size)
@@ -139,6 +141,7 @@ public class BattleService {
 
         // Create group
         Group group = Group.builder()
+                .id(ObjectId.get().toString())
                 .leader(student)
                 .members(List.of(student))
                 .pending_invites(invites)
@@ -149,8 +152,8 @@ public class BattleService {
         // TODO: Send invites
 
         // Update collection
-        var criteria = Criteria.where("_id").is(tournament.getId())
-                .and("battles._id").is(battle.getId());
+        var criteria = Criteria.where("title").is(tournament.getTitle())
+                .and("battles.title").is(battle.getTitle());
         var update = new Update();
         update.push("battles.$.groups", group);
         mongoTemplate.updateFirst(Query.query(criteria), update, "tournament");
