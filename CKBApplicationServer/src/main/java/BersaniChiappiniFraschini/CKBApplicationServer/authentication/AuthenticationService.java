@@ -6,7 +6,6 @@ import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.RequiredArgsConstructor;
@@ -87,14 +86,14 @@ public class AuthenticationService {
     }
 
     private boolean authenticate(String username_or_email, String password){
-        HttpResponse<JsonNode> response = sendPostRequest("/auth",
+        HttpResponse<ReturnMessage> response = sendPostRequest("/auth",
                 new AuthRequest(username_or_email, password));
-        return response.getStatus() == HttpStatus.ACCEPTED.value();
+        return response.getBody().message.equals("OK");
     }
 
 
     // Microservice communication
-    private HttpResponse<JsonNode> sendPostRequest(String method, Object requestBody){
+    private HttpResponse<ReturnMessage> sendPostRequest(String method, Object requestBody){
         String microservice_url = environment.getProperty("auth.microservice.url");
         try {
             Unirest.setObjectMapper(new com.mashape.unirest.http.ObjectMapper() {
@@ -111,13 +110,16 @@ public class AuthenticationService {
 
             return Unirest.post(microservice_url+method)
                     .header("Content-Type", "application/json")
-                    .body(requestBody)
-                    .asJson();
+                    .body(requestBody).asObject(ReturnMessage.class);
         } catch (UnirestException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private record ReturnMessage(
+            int code,
+            String message
+    ){}
     private record StorePasswordRequest(
             String username,
             String email,
