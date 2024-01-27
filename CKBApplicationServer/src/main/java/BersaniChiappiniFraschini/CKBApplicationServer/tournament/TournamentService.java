@@ -34,7 +34,6 @@ public class TournamentService {
 
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
-    private final MongoTemplate mongoTemplate;
 
     public ResponseEntity<PostResponse> createTournament(TournamentCreationRequest request){
 

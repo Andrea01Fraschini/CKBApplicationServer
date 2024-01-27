@@ -154,7 +154,7 @@ public class InviteService {
         if (accepted) {
             tournamentService.acceptManagerInvite(invite.getTournament_id(), user);
         } else {
-            tournamentService.rejectGroupInvite(invite.getTournament_id(), user);
+            tournamentService.rejectManagerInvite(invite.getTournament_id(), user);
         }
     }
 }

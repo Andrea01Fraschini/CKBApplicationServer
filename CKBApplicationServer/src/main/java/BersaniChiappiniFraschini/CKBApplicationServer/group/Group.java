@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -24,4 +25,6 @@ public class Group {
     private List<User> pending_invites;
     private Map<String, Integer> scores;
     private String repository;
+    private String API_Token;
+    private Date last_update;
 }
