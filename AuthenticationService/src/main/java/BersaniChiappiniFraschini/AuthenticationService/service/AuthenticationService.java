@@ -40,11 +40,11 @@ public class AuthenticationService {
         if(control(username) && control(email)){
 
             if(hashPassword != null) {
-                //PairKeyValue user = PairKeyValue.builder().key(username).value(hashPassword).build();
-                //PairKeyValue emailData = PairKeyValue.builder().key(email).value(hashPassword).build();
+                PairKeyValue user = PairKeyValue.builder().key(username).value(hashPassword).build();
+                PairKeyValue emailData = PairKeyValue.builder().key(email).value(hashPassword).build();
 
-                // pairKeyValueRepository.save(user);
-                // pairKeyValueRepository.save(emailData);
+                pairKeyValueRepository.save(user);
+                pairKeyValueRepository.save(emailData);
 
                 return new MessageReturn(ReturnCode.SUCCESS.getDefaultMessage(), "OK");
             }else {

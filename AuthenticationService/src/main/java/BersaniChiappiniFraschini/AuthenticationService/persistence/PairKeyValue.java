@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 @Data
 @Entity
 @AllArgsConstructor
+@Builder
 @NoArgsConstructor
 @Table(name = "keyValue", schema = "AUTH")
 public class PairKeyValue {
