@@ -68,9 +68,8 @@ public class TournamentService {
         tournamentRepository.insert(tournament);
 
         // Notify the whole world about this
-        Runnable taskSendEmail = () -> {
-            notificationService.sendTournamentCreationNotifications(tournament);
-        };
+        Runnable taskSendEmail = () ->
+                notificationService.sendTournamentCreationNotifications(tournament);
 
         executor.submit(taskSendEmail);
         // for each user in request.invited_managers, send invite request
@@ -109,9 +108,10 @@ public class TournamentService {
         mongoTemplate.updateFirst(Query.query(criteria), update, "tournament");
 
         //send e-mail of the subscription
-        Runnable taskSendEmail = () -> {
-            notificationService.sendNotification(user.getEmail(), "You have successfully registered for the " + "'%s'".formatted(title) + " tournament");
-        };
+        Runnable taskSendEmail = () ->
+                notificationService.sendNotification(
+                        user.getEmail(),
+                        "You have successfully registered for the " + "'%s'".formatted(title) + " tournament");
 
         executor.submit(taskSendEmail);
 
