@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/tournaments")
 public class TournamentController {
     private final TournamentService tournamentService;
+
     @PostMapping("/create")
     public ResponseEntity<PostResponse> createTournament(
             @RequestBody TournamentCreationRequest request
     ){
-
         return tournamentService.createTournament(request);
     }
 

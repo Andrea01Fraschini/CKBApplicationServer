@@ -1,13 +1,15 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
+import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.mongodb.core.MongoTemplate;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,6 +30,7 @@ public class TournamentService {
     private final TournamentRepository tournamentRepository;
     private final UserDetailsService userDetailsService;
     private final NotificationService notificationService;
+    private final MongoTemplate mongoTemplate;
 
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
@@ -117,5 +120,36 @@ public class TournamentService {
         executor.submit(taskSendEmail);
 
         return ResponseEntity.ok(null);
+    }
+  
+    public void addBattle(String tournament_title, Battle battle) {
+        var update = new Update();
+        update.push("battles", battle);
+        var criteria = Criteria.where("title").in(tournament_title);
+        mongoTemplate.updateFirst(Query.query(criteria), update, "tournament");
+    }
+
+    public void inviteManager(String tournament_title, User receiver) {
+        Query query = new Query(Criteria.where("title").is(tournament_title));
+        var update = new Update().push("pending_invites", receiver);
+
+        mongoTemplate.updateFirst(query, update, "tournament");
+    }
+
+    public void acceptManagerInvite(String tournament_id, User user) {
+        Query query = new Query(Criteria.where("_id").is(new ObjectId(tournament_id)));
+        var update = new Update()
+                .push("educators", user)
+                .pull("pending_invites", Query.query(Criteria.where("_id").is(new ObjectId(user.getId()))));
+
+        mongoTemplate.updateFirst(query, update, "tournament");
+    }
+
+    public void rejectManagerInvite(String tournament_id, User user) {
+        Query query = new Query(Criteria.where("_id").is(new ObjectId(tournament_id)));
+        var update = new Update()
+                .pull("pending_invites", Query.query(Criteria.where("_id").is(new ObjectId(user.getId()))));
+
+        mongoTemplate.updateFirst(query, update, "tournament");
     }
 }

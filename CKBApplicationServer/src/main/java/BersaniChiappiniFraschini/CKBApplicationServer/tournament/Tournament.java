@@ -26,6 +26,7 @@ public class Tournament {
     private boolean is_open;
     private List<User> subscribed_users;
     private List<User> educators;
+    private List<User> pending_invites;
     private List<Battle> battles;
     private Date subscription_deadline;
 }
