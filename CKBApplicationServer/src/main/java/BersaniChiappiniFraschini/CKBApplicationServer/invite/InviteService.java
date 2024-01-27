@@ -4,6 +4,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupService;
+import BersaniChiappiniFraschini.CKBApplicationServer.group.ManagersService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
@@ -30,7 +31,7 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 public class InviteService {
     private final UserService userService;
-    private final TournamentService tournamentService;
+    private final ManagersService managersService;
     private final GroupService groupService;
     private final NotificationService notificationService;
     private final UserDetailsService userDetailsService;
@@ -66,7 +67,7 @@ public class InviteService {
                 .build();
 
         userService.addInvite(invite);
-        tournamentService.inviteManager(tournament.getTitle(), receiver);
+        managersService.inviteManager(tournament.getTitle(), receiver);
 
         Runnable taskSendEmail = () -> notificationService.sendInviteNotification(sender, receiver);
         executor.submit(taskSendEmail);
@@ -173,9 +174,9 @@ public class InviteService {
     public void updateManagerInviteStatus(Invite invite, User user, boolean accepted) {
         // Update pending invites in tournament
         if (accepted) {
-            tournamentService.acceptManagerInvite(invite.getTournament_id(), user);
+            managersService.acceptManagerInvite(invite.getTournament_id(), user);
         } else {
-            tournamentService.rejectManagerInvite(invite.getTournament_id(), user);
+            managersService.rejectManagerInvite(invite.getTournament_id(), user);
         }
     }
 }
