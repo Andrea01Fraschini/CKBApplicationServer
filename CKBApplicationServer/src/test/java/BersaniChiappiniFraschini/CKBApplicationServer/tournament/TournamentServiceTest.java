@@ -38,7 +38,7 @@ class TournamentServiceTest {
                 .thenReturn(User.builder().username("ginopippo").build());
 
         when(tournamentRepository.existsByTitle(anyString()))
-                .thenReturn(true);
+                .thenReturn(false);
 
         doNothing().when(notificationService).sendTournamentCreationNotifications(any());
 
