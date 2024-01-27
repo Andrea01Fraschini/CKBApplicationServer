@@ -20,4 +20,12 @@ public class TournamentController {
 
         return tournamentService.createTournament(request);
     }
+
+    @PostMapping("/subscribe")
+    public ResponseEntity<PostResponse> subscribeTournament(
+            @RequestBody TournamentSubscribeRequest request
+    ){
+
+        return tournamentService.subscribeTournament(request);
+    }
 }

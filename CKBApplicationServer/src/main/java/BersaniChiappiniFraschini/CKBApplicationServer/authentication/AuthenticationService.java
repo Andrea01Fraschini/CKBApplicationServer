@@ -34,6 +34,7 @@ public class AuthenticationService {
         //Check if valid account type
         try{
             account_type = AccountType.valueOf(request.getAccount_type());
+            System.out.println(account_type);
         }catch (Exception ignored){
             var body = AuthenticationResponse.builder().error_msg("Invalid account type").build();
             return ResponseEntity.badRequest().body(body);
@@ -72,6 +73,7 @@ public class AuthenticationService {
     public ResponseEntity<AuthenticationResponse> login(LoginRequest request) {
         String key = request.getEmail_or_username();
         String value = request.getPassword();
+
 
         if (!authenticate(key, value)){
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
