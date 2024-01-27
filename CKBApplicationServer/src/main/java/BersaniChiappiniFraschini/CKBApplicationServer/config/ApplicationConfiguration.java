@@ -14,6 +14,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Pattern;
 
 
@@ -47,7 +49,7 @@ public class ApplicationConfiguration {
     }
 
     @Bean
-    public ThreadPoolTaskScheduler taskScheduler() { return new ThreadPoolTaskScheduler(); }
+    public ScheduledExecutorService taskScheduler() { return Executors.newScheduledThreadPool(10); }
 
     //TODO change all of this when auth microservice is up and running
     @Bean
