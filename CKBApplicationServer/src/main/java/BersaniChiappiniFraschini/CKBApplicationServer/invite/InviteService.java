@@ -23,6 +23,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @Service
 @RequiredArgsConstructor
 public class InviteService {
@@ -33,6 +36,7 @@ public class InviteService {
     private final UserDetailsService userDetailsService;
     private final TournamentRepository tournamentRepository;
     private final MongoTemplate mongoTemplate;
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     public ResponseEntity<PostResponse> sendManagerInvite(ManagerInviteRequest request) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -63,7 +67,9 @@ public class InviteService {
 
         userService.addInvite(invite);
         tournamentService.inviteManager(tournament.getTitle(), receiver);
-        notificationService.sendInviteNotification(sender, receiver);
+
+        Runnable taskSendEmail = () -> notificationService.sendInviteNotification(sender, receiver);
+        executor.submit(taskSendEmail);
     }
 
     public ResponseEntity<PostResponse> sendGroupInvite(GroupInviteRequest request) {
@@ -115,7 +121,9 @@ public class InviteService {
 
         userService.addInvite(invite);
         groupService.inviteStudent(tournament.getTitle(), battle.getTitle(), group.getId(), receiver);
-        notificationService.sendInviteNotification(sender, receiver);
+
+        Runnable taskSendEmail = () -> notificationService.sendInviteNotification(sender, receiver);
+        executor.submit(taskSendEmail);
     }
 
     public ResponseEntity<PostResponse> updateInviteStatus(InviteStatusUpdateRequest request) {
@@ -146,7 +154,9 @@ public class InviteService {
         }
 
         var sender = (User) userDetailsService.loadUserByUsername(invite.get().getSender());
-        notificationService.sendInviteStatusUpdate(sender, accepted);
+
+        Runnable taskSendEmail = () -> notificationService.sendInviteStatusUpdate(sender, accepted);
+        executor.submit(taskSendEmail);
 
         return ResponseEntity.ok(null);
     }

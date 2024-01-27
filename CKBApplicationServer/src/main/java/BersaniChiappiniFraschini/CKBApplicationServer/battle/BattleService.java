@@ -2,6 +2,7 @@ package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
+import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
@@ -31,6 +32,7 @@ public class BattleService {
     private final NotificationService notificationService;
     private final UserDetailsService userDetailsService;
     private final MongoTemplate mongoTemplate;
+    private final InviteService inviteService;
 
     public ResponseEntity<PostResponse> createBattle(BattleCreationRequest request) {
 
@@ -149,7 +151,10 @@ public class BattleService {
                 .repository(null)
                 .build();
 
-        // TODO: Send invites
+        // Send invites
+        for (var invitee : invites) {
+            inviteService.sendGroupInvite(student, invitee, tournament, battle, group);
+        }
 
         // Update collection
         var criteria = Criteria.where("title").is(tournament.getTitle())

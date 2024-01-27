@@ -1,6 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
+import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
@@ -31,10 +32,8 @@ public class TournamentService {
     private final UserDetailsService userDetailsService;
     private final NotificationService notificationService;
     private final MongoTemplate mongoTemplate;
-
+    private final InviteService inviteService;
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
-
-    private final MongoTemplate mongoTemplate;
 
     public ResponseEntity<PostResponse> createTournament(TournamentCreationRequest request){
 
@@ -75,9 +74,13 @@ public class TournamentService {
         Runnable taskSendEmail = () -> {
             notificationService.sendTournamentCreationNotifications(tournament);
         };
-
         executor.submit(taskSendEmail);
+
         // for each user in request.invited_managers, send invite request
+        for (var invitee : request.getInvited_managers()) {
+            var manager = (User) userDetailsService.loadUserByUsername(invitee);
+            inviteService.sendManagerInvite(educator, manager, tournament);
+        }
 
         return ResponseEntity.ok(null);
     }
