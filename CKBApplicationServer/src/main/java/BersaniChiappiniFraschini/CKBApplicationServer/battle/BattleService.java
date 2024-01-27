@@ -1,11 +1,14 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
+import BersaniChiappiniFraschini.CKBApplicationServer.event.TimedEvent;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupMember;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
@@ -25,6 +28,8 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +40,8 @@ public class BattleService {
     private final UserDetailsService userDetailsService;
     private final MongoTemplate mongoTemplate;
     private final InviteService inviteService;
+    private final EventService eventService;
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     public ResponseEntity<PostResponse> createBattle(BattleCreationRequest request) {
 
@@ -82,14 +89,18 @@ public class BattleService {
                 .groups(List.of())
                 .build();
 
-        // TODO: register timed event to event handler
+        // Register battle start event
+        eventService.registerTimedEvent(
+                new TimedEvent("new battle", enrollment_deadline),
+                startBattle(tournament, battle)
+        );
 
         // update tournament
         tournamentService.addBattle(tournament_title, battle);
 
         // Notify subscribed students
-        // TODO: run in different thread (?)
-        notificationService.sendBattleCreationNotification(battle, tournament);
+        Runnable taskSendEmail = () -> notificationService.sendBattleCreationNotification(battle, tournament);
+        executor.submit(taskSendEmail);
 
         return ResponseEntity.ok(null);
     }
@@ -166,5 +177,28 @@ public class BattleService {
         mongoTemplate.updateFirst(Query.query(criteria), update, "tournament");
 
         return ResponseEntity.ok(null);
+    }
+
+    public Runnable startBattle(Tournament tournament, Battle battle) {
+        return () -> {
+            // TODO: Call GitHubManager to create repository
+            var repositoryUrl = "";
+
+            var query = Query.query(
+                    Criteria.where("_id")
+                            .is(new ObjectId(tournament.getId()))
+                            .and("battles._id")
+                            .is(new ObjectId(battle.getId()))
+            );
+            var update = new Update().set("repository", repositoryUrl);
+            mongoTemplate.updateFirst(query, update, "tournament");
+
+            for (var group : battle.getGroups()) {
+                // TODO: Generate API token
+                var token = "";
+                Runnable taskSendEmail = () -> notificationService.sendRepositoryInvites(group, battle, token);
+                executor.submit(taskSendEmail);
+            }
+        };
     }
 }

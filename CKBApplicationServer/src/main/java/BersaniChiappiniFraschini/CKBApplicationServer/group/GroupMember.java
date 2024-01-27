@@ -13,9 +13,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class GroupMember {
     private String id;
     private String username;
+    private String email;
 
     public GroupMember(User user) {
         this.id = user.getId();
         this.username = user.getUsername();
+        this.email = user.getEmail();
     }
 }
