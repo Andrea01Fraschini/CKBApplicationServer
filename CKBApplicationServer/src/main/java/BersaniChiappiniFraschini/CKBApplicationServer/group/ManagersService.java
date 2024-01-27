@@ -1,5 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.group;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentManager;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -19,7 +21,7 @@ public class ManagersService {
 
     public void inviteManager(String tournament_title, User receiver) {
         Query query = new Query(Criteria.where("title").is(tournament_title));
-        var update = new Update().push("pending_invites", receiver);
+        var update = new Update().push("pending_invites", new PendingInvite(receiver));
 
         mongoTemplate.updateFirst(query, update, "tournament");
     }
@@ -27,7 +29,7 @@ public class ManagersService {
     public void acceptManagerInvite(String tournament_id, User user) {
         Query query = new Query(Criteria.where("_id").is(new ObjectId(tournament_id)));
         var update = new Update()
-                .push("educators", user)
+                .push("educators", new TournamentManager(user))
                 .pull("pending_invites", Query.query(Criteria.where("_id").is(new ObjectId(user.getId()))));
 
         mongoTemplate.updateFirst(query, update, "tournament");

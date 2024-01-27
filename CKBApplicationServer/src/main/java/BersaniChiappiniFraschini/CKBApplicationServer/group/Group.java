@@ -1,6 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.group;
 
-import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
+import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,9 +19,9 @@ import java.util.Map;
 public class Group {
     @Id
     private String id; //Work in Progress
-    private User leader;
-    private List<User> members;
-    private List<User> pending_invites;
+    private GroupMember leader;
+    private List<GroupMember> members;
+    private List<PendingInvite> pending_invites;
     private Map<String, Integer> scores;
     private String repository;
 }

@@ -6,7 +6,6 @@ import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationS
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -63,7 +62,7 @@ public class TournamentService {
                 .title(title)
                 .subscription_deadline(subscription_deadline)
                 .is_open(true)
-                .educators(List.of(educator))
+                .educators(List.of(new TournamentManager(educator)))
                 .subscribed_users(List.of())
                 .battles(List.of())
                 .build();
@@ -71,9 +70,7 @@ public class TournamentService {
         tournamentRepository.insert(tournament);
 
         // Notify the whole world about this
-        Runnable taskSendEmail = () -> {
-            notificationService.sendTournamentCreationNotifications(tournament);
-        };
+        Runnable taskSendEmail = () -> notificationService.sendTournamentCreationNotifications(tournament);
         executor.submit(taskSendEmail);
 
         // for each user in request.invited_managers, send invite request
@@ -111,15 +108,12 @@ public class TournamentService {
         User user = (User) userDetailsService.loadUserByUsername(username);
 
         var update = new Update();
-        update.push("subscribed_users", user);
+        update.push("subscribed_users", new TournamentSubscriber(user));
         var criteria = Criteria.where("title").in(title);
         mongoTemplate.updateFirst(Query.query(criteria), update, "tournament");
 
         //send e-mail of the subscription
-        Runnable taskSendEmail = () -> {
-            notificationService.sendNotification(user.getEmail(), "You have successfully registered for the " + "'%s'".formatted(title) + " tournament");
-        };
-
+        Runnable taskSendEmail = () -> notificationService.sendNotification(user.getEmail(), "You have successfully registered for the " + "'%s'".formatted(title) + " tournament");
         executor.submit(taskSendEmail);
 
         return ResponseEntity.ok(null);

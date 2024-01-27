@@ -2,7 +2,9 @@ package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
+import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupMember;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
+import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
@@ -144,9 +146,9 @@ public class BattleService {
         // Create group
         Group group = Group.builder()
                 .id(ObjectId.get().toString())
-                .leader(student)
-                .members(List.of(student))
-                .pending_invites(invites)
+                .leader(new GroupMember(student))
+                .members(List.of(new GroupMember(student)))
+                .pending_invites(invites.stream().map(PendingInvite::new).toList())
                 .scores(new HashMap<>()) // TODO: create map from battle evaluation parameters
                 .repository(null)
                 .build();
