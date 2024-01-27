@@ -4,6 +4,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -44,6 +45,9 @@ public class ApplicationConfiguration {
         String regex = "^(.+)@(.+)$";
         return Pattern.compile(regex).matcher(string).matches();
     }
+
+    @Bean
+    public ThreadPoolTaskScheduler taskScheduler() { return new ThreadPoolTaskScheduler(); }
 
     //TODO change all of this when auth microservice is up and running
     @Bean
