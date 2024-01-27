@@ -1,9 +1,12 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.notification;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
+import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -35,12 +38,41 @@ public class NotificationService {
     }
 
     /**
+     * Sends a notification to all subscribed students in the tournament of a new battle
+     * @param battle new battle
+     * @param tournament tournament where the battle can ba found
+     */
+    public void sendBattleCreationNotification(Battle battle, Tournament tournament) {
+        String message = "A battle titled '%s' has been created in tournament '%s'."
+                .formatted(battle.getTitle(), tournament.getTitle());
+
+        for (var user : tournament.getSubscribed_users()) {
+            sendNotification(user.getEmail(), message);
+        }
+    }
+
+    public void sendInviteNotification(User sender, User receiver) {
+        String message = "You received an invite from %s"
+                .formatted(sender.getUsername());
+
+        sendNotification(receiver.getEmail(), message);
+    }
+
+    public void sendInviteStatusUpdate(User sender, boolean accepted) {
+        String message = "%s has %s your invite"
+                .formatted(sender.getUsername(), accepted ? "accepted" : "rejected");
+
+        sendNotification(sender.getEmail(), message);
+    }
+
+    /**
      * Sends a notification to a user
      * @param user_email User email used for identification and for sending an email
      * @param message body of the notification
      */
     public void sendNotification(String user_email, String message){
         var notification = Notification.builder()
+                .id(ObjectId.get().toString())
                 .message(message)
                 .is_closed(false)
                 .creation_date(new Date(System.currentTimeMillis()))

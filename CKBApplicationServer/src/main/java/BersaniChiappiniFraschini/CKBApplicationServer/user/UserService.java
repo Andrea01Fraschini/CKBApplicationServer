@@ -1,5 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.user;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.invite.Invite;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -18,6 +19,8 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
+
+
 
     public List<String> searchEducatorByName(String name){
         var users =  userRepository.findByAccountTypeAndUsernameLike(AccountType.EDUCATOR, name);
@@ -43,6 +46,13 @@ public class UserService {
         var update = new Update();
         update.push("notifications", notification);
         var criteria = Criteria.where("email").in(email);
+        mongoTemplate.updateFirst(Query.query(criteria), update, "user");
+    }
+
+    public void addInvite(Invite invite){
+        var update = new Update();
+        update.push("invites", invite);
+        var criteria = Criteria.where("username").is(invite.getReceiver());
         mongoTemplate.updateFirst(Query.query(criteria), update, "user");
     }
 }
