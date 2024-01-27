@@ -31,11 +31,7 @@ public class TournamentService {
     private final UserDetailsService userDetailsService;
     private final NotificationService notificationService;
     private final MongoTemplate mongoTemplate;
-
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
-
-    private final MongoTemplate mongoTemplate;
-
     public ResponseEntity<PostResponse> createTournament(TournamentCreationRequest request){
 
         // Check for privileges
