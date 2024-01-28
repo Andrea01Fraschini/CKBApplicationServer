@@ -8,6 +8,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.group.ManagersService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
+import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -204,6 +205,69 @@ class InviteServiceTest {
         var error_msg = Objects.requireNonNull(response.getBody()).getError_msg();
         assertAll(
                 ()->assertEquals("No group found", error_msg),
+                ()->assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode())
+        );
+    }
+
+    @Test
+    @WithMockUser(username = "TestUser", authorities = {"STUDENT"})
+    public void shouldUpdateGroupInviteStatus(){
+        InviteStatusUpdateRequest request = new InviteStatusUpdateRequest(
+                "ABCDEF0123456789EBAFDAFE", "tournament_id", true
+        );
+
+        when(userDetailsService.loadUserByUsername(any()))
+                .thenReturn(User.builder()
+                        .username("TestUser")
+                        .accountType(AccountType.STUDENT)
+                        .invites(List.of(Invite.builder()
+                                .id("ABCDEF0123456789EBAFDAFE")
+                                .tournament_id("tournament_id").build()))
+                        .build());
+
+        var response = inviteService.updateInviteStatus(request);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    @WithMockUser(username = "TestUser", authorities = {"EDUCATOR"})
+    public void shouldUpdateManagerInviteStatus(){
+        InviteStatusUpdateRequest request = new InviteStatusUpdateRequest(
+                "ABCDEF0123456789EBAFDAFE", "tournament_id", true
+        );
+
+        when(userDetailsService.loadUserByUsername(any()))
+                .thenReturn(User.builder()
+                        .username("TestUser")
+                        .accountType(AccountType.EDUCATOR)
+                        .invites(List.of(Invite.builder()
+                                .id("ABCDEF0123456789EBAFDAFE")
+                                .tournament_id("tournament_id").build()))
+                        .build());
+
+        var response = inviteService.updateInviteStatus(request);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+
+    @Test
+    @WithMockUser(username = "TestUser", authorities = {"STUDENT"})
+    public void shouldNotFindInvites(){
+        InviteStatusUpdateRequest request = new InviteStatusUpdateRequest(
+                "ABCDEF0123456789EBAFDAFE", "tournament_id", true
+        );
+
+        when(userDetailsService.loadUserByUsername(any()))
+                .thenReturn(User.builder()
+                        .username("TestUser")
+                        .accountType(AccountType.STUDENT)
+                        .invites(List.of())
+                        .build());
+
+        var response = inviteService.updateInviteStatus(request);
+        var error_msg = Objects.requireNonNull(response.getBody()).getError_msg();
+        assertAll(
+                ()->assertEquals("No invite found", error_msg),
                 ()->assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode())
         );
     }
