@@ -28,4 +28,6 @@ public class BattleController {
     ) {
         return battleService.enrollGroup(request);
     }
+
+    //TODO: here the view of the battle in detail
 }

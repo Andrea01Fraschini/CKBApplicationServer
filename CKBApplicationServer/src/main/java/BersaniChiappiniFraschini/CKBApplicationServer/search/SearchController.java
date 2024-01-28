@@ -29,18 +29,18 @@ public class SearchController {
         return searchService.searchTournament(tournamentTitle);
     }
 
-    /*
+
     @GetMapping("/battles")
     public List<BattleInfo> getBattlesAll(){
 
         return searchService.searchBattlesAll();
     }
 
+
     @GetMapping("/battle")
     public List<BattleInfo> getBattlesAll(@RequestParam(value = "battleTitle") String battleTitle){
 
         return searchService.searchBattle(battleTitle);
     }
-    */
 
 }

@@ -4,24 +4,26 @@ package BersaniChiappiniFraschini.CKBApplicationServer.search;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.dashboard.CardInfoEducator;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
+import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentCreationRequest;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -46,50 +48,56 @@ public class SearchService {
         return tournamentInfo;
     }
 
-    /*
     public List<BattleInfo> searchBattlesAll(){
 
         AggregationOperation unwind = Aggregation.unwind("battles");
-        AggregationOperation project = Aggregation.project("battles");
-        Aggregation aggregation = Aggregation.newAggregation(unwind, project);
-        AggregationResults<Battle> results = mongoTemplate.aggregate(aggregation, "tournament", Battle.class);
+        AggregationOperation project1 = Aggregation.project("title","battles").and("title").as("tournamentTitle");
+        AggregationOperation project2 = Aggregation.project("tournamentTitle", "battles.title", "battles.enrollment_deadline","battles.groups");
+        Aggregation aggregation = Aggregation.newAggregation(project1, unwind, project1, project2);
+        AggregationResults<SupportClassBattleInfo> results = mongoTemplate.aggregate(aggregation, "tournament", SupportClassBattleInfo.class);
 
+        //System.out.println("Map: "+results.getMappedResults());
         List<BattleInfo> battlesInfo = getBattle(results);
+
+        return battlesInfo;
     }
+
 
     public List<BattleInfo> searchBattle(String battleTitle){
 
         AggregationOperation unwind = Aggregation.unwind("battles");
         AggregationOperation match = Aggregation.match(
-                Aggregation.matchOperation(
-                        Aggregation.regex("battles.title", battleTitle, "i")  // "i" per rendere la ricerca case-insensitive
-                )
+                Criteria.where("battles.title").regex(battleTitle) // "i" per rendere la ricerca case-insensitive
         );
-        AggregationOperation project = Aggregation.project("battles");
-        Aggregation aggregation = Aggregation.newAggregation(unwind, match, project);
-        AggregationResults<Battle> results = mongoTemplate.aggregate(aggregation, "tournament", Battle.class);
+
+        AggregationOperation project1 = Aggregation.project("title","battles").and("title").as("tournamentTitle");
+        AggregationOperation project2 = Aggregation.project("tournamentTitle", "battles.title", "battles.enrollment_deadline","battles.groups");
+        Aggregation aggregation = Aggregation.newAggregation(unwind, match, project1, project2);
+
+        AggregationResults<SupportClassBattleInfo> results = mongoTemplate.aggregate(aggregation, "tournament", SupportClassBattleInfo.class);
 
         List<BattleInfo> battlesInfo = getBattle(results);
+
+        return battlesInfo;
     }
 
-    private List<BattleInfo> getBattle( AggregationResults<Battle> results){
+    private List<BattleInfo> getBattle(AggregationResults<SupportClassBattleInfo> results){
 
-         List<BattleInfo> battlesInfo = new ArrayList<>();
+        List<BattleInfo> battlesInfo = new ArrayList<>();
+        Date today = new Date();
 
-        // I'm waiting for Battle Model
         for(var b : results){
-            battlesArray.add(new BattleInfo(
+            battlesInfo.add(new BattleInfo(
+                    b.getTournamentTitle(),
                     b.getTitle(),
-                    b.getStatus(),
+                    !today.after(b.getEnrollment_deadline()),
                     b.getEnrollment_deadline(),
-                    b.getEnrolledGroups().size()
+                    b.getGroups().size()
             ));
         }
 
         return battlesInfo;
     }
-
-    */
 
 
     private List<TournamentInfo> getTournament( Collection<Tournament> tournaments){
@@ -110,5 +118,15 @@ public class SearchService {
         }
 
         return tournamentInfos;
+    }
+
+
+    @Data
+    @AllArgsConstructor
+    private static class SupportClassBattleInfo {
+        private String tournamentTitle;
+        private String title;
+        private Date enrollment_deadline;
+        private List<Group> groups;
     }
 }

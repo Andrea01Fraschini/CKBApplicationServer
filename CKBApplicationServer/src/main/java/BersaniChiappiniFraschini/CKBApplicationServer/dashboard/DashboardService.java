@@ -5,6 +5,8 @@ import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import com.mongodb.client.MongoCollection;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -95,7 +97,7 @@ public class DashboardService {
     private List<SupportClassInfoStudent> getGroupByUsername(String username){
         Criteria criteria = Criteria.where("battles.groups.members.username").is(username);
 
-        //IDEA: db.tournament.aggregate([{$match: {$or: [{"battles.groups.leader.username": "Prova"}, {"battles.groups.members.username": "Prova"}]}}, {$unwind: "$battles"}, {$unwind: "$battles.groups"}, {$project: {"tournamentTitle": "$title", "battles.title": 1, "battles.submission_deadline": 1,"battles.groups": 1}}])
+        //IDEA: db.tournament.aggregate([{$match: {"battles.groups.members.username": "Prova"}}, {$unwind: "$battles"}, {$unwind: "$battles.groups"}, {$project: {"tournamentTitle": "$title", "battles.title": 1, "battles.submission_deadline": 1,"battles.groups": 1}}])
         AggregationOperation match = Aggregation.match(criteria);
         AggregationOperation unwind1 = Aggregation.unwind("battles");
         AggregationOperation unwind2 = Aggregation.unwind("battles.groups");
@@ -107,5 +109,15 @@ public class DashboardService {
         AggregationResults<SupportClassInfoStudent> results = mongoTemplate.aggregate(aggregation, "tournament", SupportClassInfoStudent.class);
 
         return results.getMappedResults();
+    }
+
+    // TODO: da vedere successivamente
+    @Data
+    @AllArgsConstructor
+    private static class SupportClassInfoStudent {
+        private String tournamentTitle;
+        private String title;
+        private Date submission_deadline;
+        private Group groups;
     }
 }

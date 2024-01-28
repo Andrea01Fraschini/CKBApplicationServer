@@ -28,4 +28,6 @@ public class TournamentController {
 
         return tournamentService.subscribeTournament(request);
     }
+
+    //TODO: here the view of the tournament in detail
 }
