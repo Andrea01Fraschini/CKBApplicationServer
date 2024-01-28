@@ -5,6 +5,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -31,16 +32,14 @@ class TournamentServiceTest {
     private TournamentService tournamentService;
 
     @Test
-    @WithMockUser(username = "ginopippo", authorities = {"EDUCATOR"})
+    @WithMockUser(username = "TestEducator", authorities = {"EDUCATOR"})
     public void shouldCreateTournamentCorrectly(){
 
         when(userDetailsService.loadUserByUsername(any()))
-                .thenReturn(User.builder().username("ginopippo").build());
+                .thenReturn(User.builder().username("TestEducator").build());
 
         when(tournamentRepository.existsByTitle(anyString()))
                 .thenReturn(false);
-
-        doNothing().when(notificationService).sendTournamentCreationNotifications(any());
 
         TournamentCreationRequest request = new TournamentCreationRequest(
                 "Test Tournament",
@@ -50,6 +49,26 @@ class TournamentServiceTest {
 
 
         var response = tournamentService.createTournament(request);
-        assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    @WithMockUser(username = "TestStudent", authorities = {"STUDENT"})
+    public void shouldNotCreateTournamentAsStudent(){
+
+        when(userDetailsService.loadUserByUsername(any()))
+                .thenReturn(User.builder().username("TestStudent").build());
+
+        when(tournamentRepository.existsByTitle(anyString()))
+                .thenReturn(false);
+
+        TournamentCreationRequest request = new TournamentCreationRequest(
+                "Test Tournament",
+                new Date(System.currentTimeMillis()+1000*60*60*24),
+                List.of()
+        );
+
+        var response = tournamentService.createTournament(request);
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 }
