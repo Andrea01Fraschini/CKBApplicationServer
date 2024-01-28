@@ -13,9 +13,8 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+
+import java.util.*;
 
 /**
  * Service that gathers information to construct the dashboard view for the user
@@ -36,8 +35,6 @@ public class DashboardService {
         switch (accountType) {
             case STUDENT -> {
 
-                //Collection<Battle> battles = tournamentRepository.findTournamentsByStudent(username);
-
                 //tournament_title: from title of tournament from TOURNAMENT
                 //battle_title: from title of battle or from where is the user in the group in which battle from GROUP O BATTLE
                 //current_group_score: number => sum of the scores map from GROUP
@@ -45,38 +42,23 @@ public class DashboardService {
                 //submission_deadline: submission_deadline => FROM BATTLE in which the group is enrolled
                 //students: list of the students in the GROUP
 
-                /*
-                    I'll do the search in the group and integrate with the other information
-
-                    RICERCA DEL GROUPPO IN CUI SI TROVA UTENTE
-                        -> è IL LEADER
-                        -> O NELLA LISTA UTENTI
-
-                    POSSO FARE LA QUERY E RITORNA TUTTO IN TOURNAMENT OGGETTO
-                    E POI ESTRAGGO IL VALORE
-
-                    IDEA: db.games.aggregate([{$match: {"reviews.user.products": 17}}, {$unwind: "$reviews"}, {$unwind: "$reviews.user"}])
-                */
-
-                // TODO TEST
-                List<Tournament> tournaments = getGroupByUsername(username);
-
+                List<SupportClassInfoStudent> tournaments = getGroupByUsername(username);
 
                 for(var t : tournaments){
-                    Group group = t.getBattles().get(0).getGroups().get(0);
-                    Battle battle = t.getBattles().get(0);
+                    Group group = t.getGroups();
 
                     cards.add(new CardInfoStudent(
                             //tournament_title
-                            t.getTitle(),
+                            //t.getTitle(),
+                            t.getTournamentTitle(),
                             //battle_title
-                            battle.getTitle(),
+                            t.getTitle(),
                             //current_group_score
                             group.getScores().values().stream().reduce(0, Integer::sum),
                             //last_update
                             group.getLast_update(),
                             //submission_deadline
-                            battle.getSubmission_deadline(),
+                            t.getSubmission_deadline(),
                             //students
                             group.getMembers()
                                     .stream()
@@ -110,18 +92,19 @@ public class DashboardService {
                 .build();
     }
 
-    private List<Tournament> getGroupByUsername(String username){
-        Criteria criteria = new Criteria().orOperator(
-                Criteria.where("battles.groups.leader.username").is(username),
-                Criteria.where("battles.groups.members.username").is(username)
-        );
+    private List<SupportClassInfoStudent> getGroupByUsername(String username){
+        Criteria criteria = Criteria.where("battles.groups.members.username").is(username);
 
-        //IDEA: db.games.aggregate([{$match: {"reviews.user.products": 17}}, {$unwind: "$reviews"}, {$unwind: "$reviews.user"}])
+        //IDEA: db.tournament.aggregate([{$match: {$or: [{"battles.groups.leader.username": "Prova"}, {"battles.groups.members.username": "Prova"}]}}, {$unwind: "$battles"}, {$unwind: "$battles.groups"}, {$project: {"tournamentTitle": "$title", "battles.title": 1, "battles.submission_deadline": 1,"battles.groups": 1}}])
         AggregationOperation match = Aggregation.match(criteria);
         AggregationOperation unwind1 = Aggregation.unwind("battles");
         AggregationOperation unwind2 = Aggregation.unwind("battles.groups");
-        Aggregation aggregation = Aggregation.newAggregation(match, unwind1, unwind2);
-        AggregationResults<Tournament> results = mongoTemplate.aggregate(aggregation, "tournament", Tournament.class);
+
+        AggregationOperation project1 = Aggregation.project("title","battles").and("title").as("tournamentTitle");
+
+        AggregationOperation project2 = Aggregation.project("tournamentTitle", "battles.title", "battles.submission_deadline","battles.groups");
+        Aggregation aggregation = Aggregation.newAggregation(match, unwind1, unwind2, project1, project2);
+        AggregationResults<SupportClassInfoStudent> results = mongoTemplate.aggregate(aggregation, "tournament", SupportClassInfoStudent.class);
 
         return results.getMappedResults();
     }

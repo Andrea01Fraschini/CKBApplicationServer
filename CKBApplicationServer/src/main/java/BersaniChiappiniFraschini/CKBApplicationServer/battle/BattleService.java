@@ -176,6 +176,10 @@ public class BattleService {
         update.push("battles.$.groups", group);
         mongoTemplate.updateFirst(Query.query(criteria), update, "tournament");
 
+        //send notification of registration to the battle
+        Runnable taskSendEmail = () -> notificationService.sendNotification(student.getEmail(), "You have successfully enrolled in the " + "'%s'".formatted(battle.getTitle()) + " battle");
+        executor.submit(taskSendEmail);
+
         return ResponseEntity.ok(null);
     }
 
