@@ -27,4 +27,6 @@ public interface TournamentRepository extends MongoRepository<Tournament, String
 
     @Query(" { '$and': [ { 'subscribed_users.username': ?0 }, { 'title': ?1 } ] }")
     Optional<Tournament> findBySubscribed_user(String username, String titleTournament);
+
+
 }

@@ -118,7 +118,7 @@ public class TournamentService {
 
         return ResponseEntity.ok(null);
     }
-  
+
     public void addBattle(String tournament_title, Battle battle) {
         var update = new Update();
         update.push("battles", battle);

@@ -12,5 +12,5 @@ public record CardInfoStudent(
         List<Student> students
 
 ) implements CardInfo{
-    private record Student(String username/*, String profile_img_url*/){}
+    record Student(String username/*, String profile_img_url*/){}
 }
