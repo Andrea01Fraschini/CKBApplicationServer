@@ -2,9 +2,11 @@ package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,6 +15,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -23,6 +26,9 @@ class TournamentServiceTest {
     private TournamentRepository tournamentRepository;
 
     @Mock
+    private MongoTemplate mongoTemplate;
+
+    @Mock
     private NotificationService notificationService;
 
     @Mock
@@ -31,12 +37,15 @@ class TournamentServiceTest {
     @InjectMocks
     private TournamentService tournamentService;
 
-    @Test
-    @WithMockUser(username = "TestEducator", authorities = {"EDUCATOR"})
-    public void shouldCreateTournamentCorrectly(){
-
+    @BeforeEach
+    public void setup(){
         when(userDetailsService.loadUserByUsername(any()))
-                .thenReturn(User.builder().username("TestEducator").build());
+                .thenReturn(User.builder().username("TestUser").build());
+    }
+
+    @Test
+    @WithMockUser(username = "TestUser", authorities = {"EDUCATOR"})
+    public void shouldCreateTournamentCorrectly(){
 
         when(tournamentRepository.existsByTitle(anyString()))
                 .thenReturn(false);
@@ -53,11 +62,8 @@ class TournamentServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "TestStudent", authorities = {"STUDENT"})
+    @WithMockUser(username = "TestUser", authorities = {"STUDENT"})
     public void shouldNotCreateTournamentAsStudent(){
-
-        when(userDetailsService.loadUserByUsername(any()))
-                .thenReturn(User.builder().username("TestStudent").build());
 
         when(tournamentRepository.existsByTitle(anyString()))
                 .thenReturn(false);
@@ -69,6 +75,36 @@ class TournamentServiceTest {
         );
 
         var response = tournamentService.createTournament(request);
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
+    @WithMockUser(username = "TestUser", authorities = {"STUDENT"})
+    public void shouldSubscribeToTournament(){
+
+        when(tournamentRepository.findBySubscribed_user(anyString(),anyString()))
+                .thenReturn(Optional.empty());
+
+        TournamentSubscribeRequest request = new TournamentSubscribeRequest(
+                "Test Tournament"
+        );
+
+        var response = tournamentService.subscribeTournament(request);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    @WithMockUser(username = "TestUser", authorities = {"EDUCATOR"})
+    public void shouldNotSubscribeToTournamentAsEducator(){
+
+        when(tournamentRepository.findBySubscribed_user(anyString(),anyString()))
+                .thenReturn(Optional.empty());
+
+        TournamentSubscribeRequest request = new TournamentSubscribeRequest(
+                "Test Tournament"
+        );
+
+        var response = tournamentService.subscribeTournament(request);
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 }
