@@ -245,7 +245,7 @@ public class BattleService {
         AggregationResults<Map> results = mongoTemplate.aggregate(aggregation, "tournament", Map.class);
 
         if(results.getMappedResults().size() == 0){
-            return new ResponseEntity<>(new PostResponse("Battle doesn't found"), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new PostResponse("Battle not found"), HttpStatus.BAD_REQUEST);
         }
 
         Battle battle = (Battle) results.getMappedResults().get(0).get("battles");
@@ -259,7 +259,7 @@ public class BattleService {
             Map<String, Integer> score = g.getScores();
             int sum = score.values().stream().mapToInt(Integer::intValue).sum();
             String leader = g.getLeader().getUsername();
-            battleInfoResponse.addPoint(leader, sum);
+            battleInfoResponse.addScore(leader, sum);
         }
 
 
@@ -299,10 +299,10 @@ public class BattleService {
                 }
 
                 if(myGroup != null){
-                    int totalScore = battleInfoResponse.getPoint(myGroup.getLeader().getUsername());
+                    int totalScore = battleInfoResponse.getScore(myGroup.getLeader().getUsername());
 
                     // scruttura battle + gruppo + totalscore
-                    BattleInfoStudent battleInfoStudent = new BattleInfoStudent(myGroup, totalScore, battle, battleInfoResponse.getLeaderBoard());
+                    BattleInfoStudent battleInfoStudent = new BattleInfoStudent(myGroup, totalScore, battle, battleInfoResponse.getLeaderboard());
 
                     return new ResponseEntity<>(battleInfoStudent, HttpStatus.ACCEPTED);
                 }else{
@@ -335,7 +335,7 @@ public class BattleService {
             private int total_score;
             private Battle battle;
 
-            private List<BattleInfoResponse.PointGroup> pointGroups;
+            private Map<String, Integer> pointGroups;
     }
 
     @Data
@@ -344,6 +344,6 @@ public class BattleService {
     private class BattleInfoEducator{
         private List<Group> groups;
         private Battle battle;
-        private List<BattleInfoResponse.PointGroup> pointGroups;
+        private Map<String, Integer> pointGroups;
     }
 }

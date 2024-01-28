@@ -8,37 +8,20 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Builder
 @AllArgsConstructor
 @Data
 public class BattleInfoResponse {
     private Battle battle;
-    private final List<PointGroup> leaderBoard = new ArrayList<>();
+    private final Map<String, Integer> leaderboard = new HashMap<>();
 
-    @Data
-    @AllArgsConstructor
-    public static class PointGroup {
-        private String username;
-        private Integer points;
+    public void addScore(String leader, int score) {
+        this.leaderboard.put(leader, score);
     }
 
-    public void addPoint(String leader, int score){
-        this.leaderBoard.add(new PointGroup(leader, score));
-    }
-
-    public int getPoint(String leader){
-
-        for(PointGroup p : leaderBoard){
-            if(p.getUsername().equals(leader)){
-                return p.getPoints();
-            }
-        }
-
-        return 0;
+    public int getScore(String leader) {
+        return this.leaderboard.get(leader) != null ? this.leaderboard.get(leader) : 0;
     }
 }

@@ -18,19 +18,10 @@ import java.util.Map;
 @NoArgsConstructor
 public class TournamentGetResponse {
     private List<BattleInfo> battleInfo;
-    private List<PointStudent>  rankStudents;
+    private Map<String, Integer> rankStudents;
 
-    private record PointStudent(
-        String username,
-        Integer points
-    ){}
 
     public void setRank(Map<String, Integer> points){
-        List<PointStudent> rankStudents = new ArrayList<>();
-
-        if (points != null)
-            points.forEach((s, p) -> rankStudents.add(new PointStudent(s, p)));
-
-        this.rankStudents = rankStudents;
+        this.rankStudents = points;
     }
 }
