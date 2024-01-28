@@ -26,8 +26,8 @@ public class TournamentController {
         return tournamentService.subscribeTournament(request);
     }
 
-    //TODO: here the view of the tournament in detail
-    @GetMapping
+    //here the view of the tournament in detail
+    @GetMapping("/view")
     public ResponseEntity<TournamentGetResponse> getTournament(
             @RequestParam String tournamentTitle
     ){

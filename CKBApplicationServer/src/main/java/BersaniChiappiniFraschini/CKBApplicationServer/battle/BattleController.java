@@ -3,10 +3,7 @@ package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -29,5 +26,12 @@ public class BattleController {
         return battleService.enrollGroup(request);
     }
 
-    //TODO: here the view of the battle in detail
+    //here the view of the battle in detail
+    @GetMapping("/view")
+    public ResponseEntity<Object> getBattle(
+            @RequestParam String tournamentTitle,
+            @RequestParam String battleTitle
+    ) {
+        return battleService.getBattle(tournamentTitle, battleTitle);
+    }
 }

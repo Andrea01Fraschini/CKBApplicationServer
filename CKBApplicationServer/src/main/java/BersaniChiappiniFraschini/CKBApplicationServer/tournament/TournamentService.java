@@ -130,16 +130,16 @@ public class TournamentService {
     }
 
     public ResponseEntity<TournamentGetResponse> getTournament(String tournamentTitle){
-        Optional<Tournament> tournament = tournamentRepository.findTournamentByTitle(tournamentTitle);
+        Tournament tournament = tournamentRepository.findTournamentByTitle(tournamentTitle);
 
-        if(tournament.isEmpty()){
-            new ResponseEntity<>(new PostResponse("not correct structure of the request"), HttpStatus.BAD_REQUEST);
+        if(tournament == null){
+            new ResponseEntity<>(new PostResponse("Tournament doesn't found"), HttpStatus.BAD_REQUEST);
         }
-        Tournament tournament1 = tournament.get();
+
         List<BattleInfo> battleInfos = new ArrayList<>();
         Date today = new Date();
 
-        for(Battle b : tournament1.getBattles()){
+        for(Battle b : tournament.getBattles()){
             battleInfos.add(
                     new BattleInfo(
                             tournamentTitle,
@@ -155,7 +155,7 @@ public class TournamentService {
                 .battleInfo(battleInfos)
                 .build();
 
-        tournamentGetResponse.setRank(tournament1.getRank_students());
+        tournamentGetResponse.setRank(tournament.getRank_students());
 
         return new ResponseEntity<>(tournamentGetResponse, HttpStatus.ACCEPTED);
     }

@@ -20,7 +20,7 @@ public interface TournamentRepository extends MongoRepository<Tournament, String
     Collection<Tournament> findTournamentsByStudent(String student_username);
 
     @Query("{ 'title': ?0 }") // Exact match search
-    Optional<Tournament> findTournamentByTitle(String title);
+    Tournament findTournamentByTitle(String title);
 
     @Query(" { 'title': {$regex : ?0, $options: 'i'}}")
     Collection<Tournament> findByTitleSearch(String tournamentTitle);

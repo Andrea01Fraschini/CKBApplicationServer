@@ -20,7 +20,6 @@ public class TournamentGetResponse {
     private List<BattleInfo> battleInfo;
     private List<PointStudent>  rankStudents;
 
-    @AllArgsConstructor
     private record PointStudent(
         String username,
         Integer points
@@ -29,7 +28,8 @@ public class TournamentGetResponse {
     public void setRank(Map<String, Integer> points){
         List<PointStudent> rankStudents = new ArrayList<>();
 
-        points.forEach((s, p) -> rankStudents.add(new PointStudent(s, p)));
+        if (points != null)
+            points.forEach((s, p) -> rankStudents.add(new PointStudent(s, p)));
 
         this.rankStudents = rankStudents;
     }
