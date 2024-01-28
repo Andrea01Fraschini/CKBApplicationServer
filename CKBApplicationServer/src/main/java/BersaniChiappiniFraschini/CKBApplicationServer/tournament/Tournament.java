@@ -1,7 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
-import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
+import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,12 +21,14 @@ import java.util.List;
 public class Tournament {
     @Id
     private String id;
+
     @Indexed(unique = true)
     private String title;
+
     private boolean is_open;
-    private List<User> subscribed_users;
-    private List<User> educators;
-    private List<User> pending_invites;
+    private List<TournamentSubscriber> subscribed_users;
+    private List<TournamentManager> educators;
+    private List<PendingInvite> pending_invites;
     private List<Battle> battles;
     private Date subscription_deadline;
 }

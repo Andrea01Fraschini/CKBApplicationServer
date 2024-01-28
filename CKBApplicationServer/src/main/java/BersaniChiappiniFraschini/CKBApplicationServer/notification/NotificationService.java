@@ -1,6 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.notification;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
+import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
@@ -63,6 +64,15 @@ public class NotificationService {
                 .formatted(sender.getUsername(), accepted ? "accepted" : "rejected");
 
         sendNotification(sender.getEmail(), message);
+    }
+
+    public void sendRepositoryInvites(Group group, Battle battle, String APIToken) {
+        var message = "The battle '%s' has started! You can find the repository at the following link: %s. Remember to include your group access token: %s"
+                .formatted(battle.getTitle(), battle.getRepository(), APIToken);
+
+        for (var member : group.getMembers()) {
+            sendNotification(member.getEmail(), message);
+        }
     }
 
     /**
