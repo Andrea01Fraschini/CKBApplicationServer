@@ -7,7 +7,7 @@ public record BattleInfo(
         String battle_title,
         boolean is_open,
         Date enrollment_deadline,
-        int number_enrolled_groups
+        int enrolled_groups
 
 ){
 

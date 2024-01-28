@@ -3,6 +3,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
+import BersaniChiappiniFraschini.CKBApplicationServer.search.BattleInfo;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -124,5 +127,36 @@ public class TournamentService {
         update.push("battles", battle);
         var criteria = Criteria.where("title").in(tournament_title);
         mongoTemplate.updateFirst(Query.query(criteria), update, "tournament");
+    }
+
+    public ResponseEntity<TournamentGetResponse> getTournament(String tournamentTitle){
+        Optional<Tournament> tournament = tournamentRepository.findTournamentByTitle(tournamentTitle);
+
+        if(tournament.isEmpty()){
+            new ResponseEntity<>(new PostResponse("not correct structure of the request"), HttpStatus.BAD_REQUEST);
+        }
+        Tournament tournament1 = tournament.get();
+        List<BattleInfo> battleInfos = new ArrayList<>();
+        Date today = new Date();
+
+        for(Battle b : tournament1.getBattles()){
+            battleInfos.add(
+                    new BattleInfo(
+                            tournamentTitle,
+                            b.getTitle(),
+                            !today.after(b.getEnrollment_deadline()),
+                            b.getEnrollment_deadline(),
+                            b.getGroups().size()
+                            )
+            );
+        }
+
+        TournamentGetResponse tournamentGetResponse = TournamentGetResponse.builder()
+                .battleInfo(battleInfos)
+                .build();
+
+        tournamentGetResponse.setRank(tournament1.getRank_students());
+
+        return new ResponseEntity<>(tournamentGetResponse, HttpStatus.ACCEPTED);
     }
 }
