@@ -4,6 +4,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -13,6 +14,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Pattern;
 
 
@@ -44,6 +47,9 @@ public class ApplicationConfiguration {
         String regex = "^(.+)@(.+)$";
         return Pattern.compile(regex).matcher(string).matches();
     }
+
+    @Bean
+    public ScheduledExecutorService taskScheduler() { return Executors.newScheduledThreadPool(10); }
 
     //TODO change all of this when auth microservice is up and running
     @Bean
