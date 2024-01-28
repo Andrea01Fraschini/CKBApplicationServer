@@ -11,6 +11,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepos
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
+import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +32,7 @@ import java.util.*;
 public class SearchService {
 
     private final TournamentRepository tournamentRepository;
+    private final UserRepository userRepository ;
     private final MongoTemplate mongoTemplate;
 
 
@@ -97,6 +100,14 @@ public class SearchService {
         }
 
         return battlesInfo;
+    }
+
+    public List<String> searchUser(String username){
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
+
+        Collection<User> users = userRepository.findByAccountTypeAndUsernameLike(accountType, username);
+        return users.stream().map(User::getUsername).toList();
     }
 
 

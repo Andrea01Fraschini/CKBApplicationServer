@@ -319,10 +319,12 @@ public class BattleService {
                 - score for group end type of evaluation
              */
             case EDUCATOR -> {
-                
+                //TODO: I'M WAITING FOR TYPE OF EVALUTATION
+                return new ResponseEntity<>("TO DO", HttpStatus.ACCEPTED);
             }
         }
-        return null;
+
+        return new ResponseEntity<>(new PostResponse("Not found ACCOUNT TYPE"), HttpStatus.BAD_REQUEST);
     }
 
     @Data
@@ -334,5 +336,14 @@ public class BattleService {
             private Battle battle;
 
             private List<BattleInfoResponse.PointGroup> pointGroups;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    private class BattleInfoEducator{
+        private List<Group> groups;
+        private Battle battle;
+        private List<BattleInfoResponse.PointGroup> pointGroups;
     }
 }
