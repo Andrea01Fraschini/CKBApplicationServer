@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/battles")
 public class BattleController {
     private final BattleService battleService;
-    private final EventService eventService;
+    // private final EventService eventService;
 
     @PostMapping("/create")
     public ResponseEntity<PostResponse> createBattle(

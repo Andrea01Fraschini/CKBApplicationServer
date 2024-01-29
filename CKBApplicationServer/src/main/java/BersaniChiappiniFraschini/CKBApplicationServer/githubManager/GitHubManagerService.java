@@ -7,6 +7,8 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.*;
+import org.antlr.v4.runtime.misc.Pair;
+import org.json.HTTP;
 import org.json.JSONObject;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
@@ -15,16 +17,24 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Service
 @RequiredArgsConstructor
 public class GitHubManagerService {
     private final Environment environment;
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
+    private ArrayList<Pair<String, String>> runner = new ArrayList<>();
 
     //Create Repository for the battle
     public String createRepository(String tournamentTitle, String battleTitle, String description){
@@ -42,10 +52,9 @@ public class GitHubManagerService {
                 "    \"allow_auto_merge\": false\n" +
                 "}";
 
-
         ResponseRequest response = sendRequest(httpMethod, apiUrl, requestBody);
 
-        if(response.code == HttpStatus.CREATED.value()){
+        if (response.code == HttpStatus.CREATED.value()) {
             return (String) response.body.get("html_url");
         } else {
             return "ERROR";
@@ -54,34 +63,34 @@ public class GitHubManagerService {
 
     //Upload the code of the battle
     public boolean setCodeRepository(String repository, String pathFile){
-        String codeBase64 = getFile(pathFile);
 
         String[] splittedArray = repository.split("/");
         String name = splittedArray[splittedArray.length - 1];
+        
+        try {
+            uploadDirectoryContents(new File(pathFile), "", name);
 
-        if(codeBase64 == null) return false;
+            Runnable request = () -> {
 
-        String repoOwner = environment.getProperty("github.repo.owner");
-        String apiUrl = "/repos/"+repoOwner+"/"+name+"/contents/project";
-        HttpMethod httpMethod = HttpMethod.POST;
+                for(Pair<String, String> r : runner){
+                    uploadFileToGitHub(r.a, r.b, name);
+                }
+            };
 
-        String requestBody =  "{" +
-                "\n" +
-                "    \"message\":\"Added the code for the battle\",\n" +
-                "    \"committer\": {\"name\":\""+repoOwner+"\",\"email\":\"code.kata.battle.git@github.com\"},\n" +
-                "    \"content\": \""+codeBase64+"\"\n" +
-                "}";
+            executor.submit(request);
 
+            return true;
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            return false;
+        }
 
-        ResponseRequest response = sendRequest(httpMethod, apiUrl, requestBody);
-
-        return response.code == HttpStatus.ACCEPTED.value();
     }
 
     //After all protect the repository only fork the group can do
 
 
-    private ResponseRequest sendRequest(HttpMethod httpMethod, String apiUrl, String requestBody){
+    private ResponseRequest sendRequest(HttpMethod httpMethod, String apiUrl, String requestBody) {
         String githubApiUrlBase = environment.getProperty("github.api.url");
         String githubToken = environment.getProperty("github.token");
 
@@ -122,17 +131,55 @@ public class GitHubManagerService {
                 .build();
     }
 
+    private void uploadDirectoryContents(File directory, String relativePath, String repo) throws Exception{
+        for (File file : directory.listFiles()) {
+            if (file.isFile()) {
 
-    private String getFile(String filePath){
-        File folder = new File(filePath);
-        Path folderPath = folder.toPath();
+                String base = getFile(file);
+
+                if(base == null){
+                    throw new Exception("Null bas");
+                }
+
+                runner.add(new Pair<>(base, relativePath + "/" + file.getName()));
+
+            } else if (file.isDirectory()) {
+                uploadDirectoryContents(file, relativePath + "/" + file.getName(), repo);
+            }
+        }
+    }
+
+    private String getFile(File directory){
+        Path folderPath = directory.toPath();
+        String codeBase64;
         byte[] file;
+
+
         try {
             file = Files.readAllBytes(folderPath);
-            return Base64.getEncoder().encodeToString(file);
+            codeBase64 = Base64.getEncoder().encodeToString(file);
         } catch (IOException e) {
-            return null;
+            System.out.println(e.getMessage());
+            codeBase64 = null;
         }
+
+        return codeBase64;
+    }
+
+    private void uploadFileToGitHub(String codeBase64, String realtive,String repo) {
+
+        String repoOwner = environment.getProperty("github.repo.owner");
+        String apiUrl = "/repos/"+repoOwner+"/"+repo+"/contents/project8"+realtive;
+        HttpMethod httpMethod = HttpMethod.PUT;
+
+        String requestBody =  "{" +
+                "\n" +
+                "    \"message\":\"Added the code for the battle "+realtive+"\",\n" +
+                "    \"committer\": {\"name\":\""+repoOwner+"\",\"email\":\"code.kata.battle.git@github.com\"},\n" +
+                "    \"content\": \""+codeBase64+"\"\n" +
+                "}";
+
+       sendRequest(httpMethod, apiUrl, requestBody);
     }
 
     @Builder

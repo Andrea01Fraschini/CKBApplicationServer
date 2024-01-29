@@ -23,7 +23,7 @@ public class Group {
     private GroupMember leader;
     private List<GroupMember> members;
     private List<PendingInvite> pending_invites;
-    private Map<String, Integer> scores;
+    private Map<EvaluationType, Integer> scores;
     private String repository;
     private String API_Token;
     private Date last_update;

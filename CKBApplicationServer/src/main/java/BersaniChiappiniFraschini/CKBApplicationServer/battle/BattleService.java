@@ -5,6 +5,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.TimedEvent;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.githubManager.GitHubManagerService;
+import BersaniChiappiniFraschini.CKBApplicationServer.group.EvaluationType;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupMember;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
@@ -55,9 +56,7 @@ public class BattleService {
 
     private final GitHubManagerService gitHubManagerService;
 
-    private final EventService eventService;
-
-  private final ExecutorService executor = Executors.newFixedThreadPool(5);
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     public ResponseEntity<PostResponse> createBattle(BattleCreationRequest request) {
 
@@ -202,7 +201,7 @@ public class BattleService {
                 .leader(new GroupMember(student))
                 .members(List.of(new GroupMember(student)))
                 .pending_invites(invites.stream().map(PendingInvite::new).toList())
-                .scores(new HashMap<>()) // TODO: create map from battle evaluation parameters
+                .scores(new HashMap<EvaluationType, Integer>()) // TODO: create map from battle evaluation parameters
                 // TODO: The repository of the battle?
                 .repository(battle.getRepository())
                 .API_Token(token)
@@ -328,7 +327,7 @@ public class BattleService {
                 .build();
 
         for (Group g : groups) {
-            Map<String, Integer> score = g.getScores();
+            Map<EvaluationType, Integer> score = g.getScores();
             int sum = score.values().stream().mapToInt(Integer::intValue).sum();
             String leader = g.getLeader().getUsername();
             battleInfoResponse.addScore(leader, sum);
