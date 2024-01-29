@@ -41,10 +41,10 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 public class BattleService {
     private final TournamentRepository tournamentRepository;
+    private final MongoTemplate mongoTemplate;
     private final TournamentService tournamentService;
     private final NotificationService notificationService;
     private final UserDetailsService userDetailsService;
-    private final MongoTemplate mongoTemplate;
     private final InviteService inviteService;
     private final EventService eventService;
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
