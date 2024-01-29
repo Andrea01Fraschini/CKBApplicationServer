@@ -14,10 +14,7 @@ import org.springframework.asm.ClassReader;
 import org.springframework.asm.ClassVisitor;
 import org.springframework.asm.Opcodes;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -26,26 +23,59 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
-public class JavaTestRunner { // implements TestRunner
-
-    // TODO: Remove jar path and build internally
-    public Map<String, TestStatus> launchUnitTests(String jarFilePath, String fileName, File scripts) throws Exception {
-        Class<?> testClass = loadTestClassFromJar(jarFilePath, fileName);
+public class JavaTestRunner implements  TestRunner {
+    public Map<String, TestStatus> launchUnitTests(String projectDirectory, String testsFileName, String buildScriptFileName) throws Exception {
+        if (projectDirectory == null || testsFileName == null || buildScriptFileName == null) return null;
+        compileJavaProject(projectDirectory, buildScriptFileName);
+        var jarPath = getJarPath(projectDirectory);
+        Class<?> testClass = loadTestClassFromJar(jarPath, buildScriptFileName);
         return runTests(testClass);
     }
 
-    // TODO: use scripts to compile
-    private static void compileJavaFile(String filePath) {
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        int result = compiler.run(null, null, null, filePath);
+    private void compileJavaProject(String projectDirectory, String buildScriptFileName) throws Exception {
+        // Build the command to run the build script
+        var directory = new File(projectDirectory);
+        ProcessBuilder processBuilder = new ProcessBuilder(
+                "bash",
+                "%s/%s".formatted(directory.getParent(), buildScriptFileName));
+        processBuilder.directory(directory);
 
-        if (result != 0) {
-            throw new RuntimeException("Compilation failed");
-        }
+        // Redirect the process output to the console
+        processBuilder.redirectErrorStream(true);
+
+        // Start the process
+        Process process = processBuilder.start();
+
+        int exitCode = process.waitFor();
+        if (exitCode != 0) throw new Exception("Build failure");
     }
 
-    private static Class<?> loadTestClassFromJar(String jarFilePath, String className) throws Exception {
+    private String getJarPath(String projectPath) throws Exception {
+        String[] command = {"sh", "-c", "find %s -name *.jar".formatted(projectPath)};
+
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        // Redirect error stream to output stream
+        processBuilder.redirectErrorStream(true);
+
+        Process process = processBuilder.start();
+
+        // Get the input stream from the process
+        InputStream inputStream = process.getInputStream();
+        // Create a BufferedReader to read the output
+        var reader = new BufferedReader(new InputStreamReader(inputStream));
+
+        // Read the output line by line
+        String output = reader.lines().map(line -> line + "\n").collect(Collectors.joining());
+
+        var exitCode = process.waitFor();
+        if (exitCode != 0) throw new Exception("No file found");
+
+        return output;
+    }
+
+    private Class<?> loadTestClassFromJar(String jarFilePath, String className) throws Exception {
         File jarFile = new File(jarFilePath);
 
         // Convert the JAR file path to URL with the "file" protocol
@@ -92,7 +122,7 @@ public class JavaTestRunner { // implements TestRunner
     }
 
     // Finds the name of the package where the file is located in the jar file.
-    public static String findCanonicalNameInJar(String jarFilePath, String targetClassName) throws IOException {
+    public String findCanonicalNameInJar(String jarFilePath, String targetClassName) throws IOException {
         try (JarFile jarFile = new JarFile(jarFilePath)) {
             Enumeration<JarEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
@@ -115,7 +145,7 @@ public class JavaTestRunner { // implements TestRunner
     }
 
     @Getter
-    static class ClassNameVisitor extends ClassVisitor {
+    private static class ClassNameVisitor extends ClassVisitor {
         private String className;
 
         public ClassNameVisitor() {

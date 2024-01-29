@@ -4,5 +4,5 @@ import java.io.File;
 import java.util.Map;
 
 public interface TestRunner {
-    Map<String, TestStatus> launchUnitTests(String projectDirectory, File scripts) throws Exception;
+    Map<String, TestStatus> launchUnitTests(String projectDirectory, String testsFileName, String buildScriptFileName) throws Exception;
 }
