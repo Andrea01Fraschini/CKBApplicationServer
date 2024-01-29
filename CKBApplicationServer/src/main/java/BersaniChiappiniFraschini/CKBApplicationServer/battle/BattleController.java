@@ -4,10 +4,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -31,11 +28,12 @@ public class BattleController {
         return battleService.enrollGroup(request);
     }
 
-    // Work in Progress
-    @PostMapping("/push-action")
-    public ResponseEntity<PostResponse> pushAction(
-            @RequestBody String request // TODO: replace
+    //here the view of the battle in detail
+    @GetMapping("/view")
+    public ResponseEntity<Object> getBattle(
+            @RequestParam String tournamentTitle,
+            @RequestParam String battleTitle
     ) {
-        return eventService.handlePushEvent(request);
+        return battleService.getBattle(tournamentTitle, battleTitle);
     }
 }

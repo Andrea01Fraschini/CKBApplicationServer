@@ -31,4 +31,6 @@ public class Battle {
     private boolean manual_evaluation;
     private List<Group> groups;
     private List<EvalParameter> evaluation_parameters;
+
+    //TODO test
 }

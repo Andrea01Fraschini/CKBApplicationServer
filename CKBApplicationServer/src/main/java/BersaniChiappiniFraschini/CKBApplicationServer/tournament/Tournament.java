@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -31,4 +32,5 @@ public class Tournament {
     private List<PendingInvite> pending_invites;
     private List<Battle> battles;
     private Date subscription_deadline;
+    private Map<String, Integer> rank_students;
 }
