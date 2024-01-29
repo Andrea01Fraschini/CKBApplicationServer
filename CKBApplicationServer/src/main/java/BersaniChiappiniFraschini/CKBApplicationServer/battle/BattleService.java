@@ -89,7 +89,7 @@ public class BattleService {
         var eval_parameters = request.getEvaluation_parameters();
 
         // add the repository for the battle
-        String repository = gitHubManagerService.createRepository(tournament.getTitle(), battle_title);
+        String repository = gitHubManagerService.createRepository(tournament.getTitle(), battle_title, description);
 
         // TODO: upload the file of the project
 
@@ -212,7 +212,7 @@ public class BattleService {
         // TODO: automatic deletion of pending invites (can be omitted ?)
         return () -> {
             // TODO: Call GitHubManager to create repository
-            var repositoryUrl = "";
+            var repositoryUrl = battle.getRepository();
 
             var query = Query.query(
                     Criteria.where("_id")

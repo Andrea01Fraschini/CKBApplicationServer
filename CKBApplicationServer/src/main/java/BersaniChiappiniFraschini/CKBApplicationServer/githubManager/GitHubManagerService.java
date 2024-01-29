@@ -27,12 +27,12 @@ public class GitHubManagerService {
 
 
     //Create Repository for the battle
-    public String createRepository(String tournamentTitle, String battleTitle){
+    public String createRepository(String tournamentTitle, String battleTitle, String description){
         String apiUrl = "/user/repos";
         HttpMethod httpMethod = HttpMethod.POST;
         String requestBody =  "{\n" +
                 "    \"name\": \""+tournamentTitle+"-"+battleTitle+"\",\n" +
-                "    \"description\": \"description\",\n" +
+                "    \"description\": \""+description+"\",\n" +
                 "    \"homepage\": \"battle_ckb\",\n" +
                 "    \"private\": false,\n" +
                 "    \"visibility\": \"public\",\n" +
