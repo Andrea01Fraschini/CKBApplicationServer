@@ -12,6 +12,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.search.SearchService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentManager;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
@@ -67,10 +68,25 @@ public class BattleService {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
         }
 
+
         var tournament_title = request.getTournament_title();
         var battle_title = request.getBattle_title();
         // Fetch tournament context
         var tournament = tournamentRepository.findTournamentByTitle(tournament_title);
+
+        boolean control = false;
+        // Check for permissions in that tournament to create battle
+        for(TournamentManager t : tournament.getEducators()){
+            if(t.getUsername().equals(auth.getName()) || auth.getName().equals(tournament.getEducator_creator())){
+                control = true;
+                break;
+            }
+        }
+
+        if(!control){
+            var res = new PostResponse("You don't have the permission to create the battle");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
+        }
 
         // Check if duplicate
         if (tournament.getBattles()

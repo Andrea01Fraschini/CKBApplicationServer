@@ -111,7 +111,6 @@ public class DashboardService {
         return results.getMappedResults();
     }
 
-    // TODO: da vedere successivamente
     @Data
     @AllArgsConstructor
     private static class SupportClassInfoStudent {
