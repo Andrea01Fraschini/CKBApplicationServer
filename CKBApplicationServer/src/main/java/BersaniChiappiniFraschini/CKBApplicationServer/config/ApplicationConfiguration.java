@@ -48,9 +48,6 @@ public class ApplicationConfiguration {
         return Pattern.compile(regex).matcher(string).matches();
     }
 
-    @Bean
-    public ScheduledExecutorService taskScheduler() { return Executors.newScheduledThreadPool(10); }
-
     //TODO change all of this when auth microservice is up and running
     @Bean
     public AuthenticationProvider authProvider(){

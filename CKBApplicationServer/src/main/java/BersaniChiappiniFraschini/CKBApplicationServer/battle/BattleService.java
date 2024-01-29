@@ -56,7 +56,8 @@ public class BattleService {
     private final GitHubManagerService gitHubManagerService;
 
     private final EventService eventService;
-    private final ExecutorService executor = Executors.newFixedThreadPool(5);
+
+  private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     public ResponseEntity<PostResponse> createBattle(BattleCreationRequest request) {
 
@@ -125,7 +126,7 @@ public class BattleService {
                 .build();
 
         // Register battle start event
-        eventService.registerTimedEvent(
+        EventService.registerTimedEvent(
                 new TimedEvent("new battle", enrollment_deadline),
                 startBattle(tournament, battle)
         );
