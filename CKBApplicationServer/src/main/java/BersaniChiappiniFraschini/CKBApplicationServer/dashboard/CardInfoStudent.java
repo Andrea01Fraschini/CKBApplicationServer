@@ -11,6 +11,8 @@ public record CardInfoStudent(
         Date submission_deadline,
         List<Student> students
 
+        //TODO: API TOKEN?
+
 ) implements CardInfo{
     record Student(String username/*, String profile_img_url*/){}
 }

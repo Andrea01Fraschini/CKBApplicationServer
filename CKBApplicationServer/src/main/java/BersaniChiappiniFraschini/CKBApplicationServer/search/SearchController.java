@@ -1,6 +1,8 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.search;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
+import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
+import BersaniChiappiniFraschini.CKBApplicationServer.user.UserInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collection;
 import java.util.List;
 
 
@@ -29,18 +32,23 @@ public class SearchController {
         return searchService.searchTournament(tournamentTitle);
     }
 
-    /*
+
     @GetMapping("/battles")
     public List<BattleInfo> getBattlesAll(){
 
         return searchService.searchBattlesAll();
     }
 
+
     @GetMapping("/battle")
     public List<BattleInfo> getBattlesAll(@RequestParam(value = "battleTitle") String battleTitle){
 
         return searchService.searchBattle(battleTitle);
     }
-    */
+
+    @GetMapping("/user")
+    public List<String> getUser(@RequestParam(value = "username") String username){
+        return searchService.searchUser(username);
+    }
 
 }
