@@ -36,6 +36,6 @@ public class BattleController {
     public ResponseEntity<PostResponse> pushAction(
             @RequestBody String request // TODO: replace
     ) {
-        return eventService.handlePushEvent(request);
+        return ResponseEntity.ok(null);
     }
 }

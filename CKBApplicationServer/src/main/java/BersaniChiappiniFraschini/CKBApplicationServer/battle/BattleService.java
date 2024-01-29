@@ -40,7 +40,6 @@ public class BattleService {
     private final UserDetailsService userDetailsService;
     private final MongoTemplate mongoTemplate;
     private final InviteService inviteService;
-    private final EventService eventService;
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     public ResponseEntity<PostResponse> createBattle(BattleCreationRequest request) {
@@ -90,7 +89,7 @@ public class BattleService {
                 .build();
 
         // Register battle start event
-        eventService.registerTimedEvent(
+        EventService.registerTimedEvent(
                 new TimedEvent("new battle", enrollment_deadline),
                 startBattle(tournament, battle)
         );
