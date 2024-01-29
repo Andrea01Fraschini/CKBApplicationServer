@@ -66,9 +66,9 @@ public class GitHubManagerService {
 
         String[] splittedArray = repository.split("/");
         String name = splittedArray[splittedArray.length - 1];
-        
+
         try {
-            uploadDirectoryContents(new File(pathFile), "", name);
+            uploadDirectoryContents(new File(pathFile), "");
 
             Runnable request = () -> {
 
@@ -131,7 +131,7 @@ public class GitHubManagerService {
                 .build();
     }
 
-    private void uploadDirectoryContents(File directory, String relativePath, String repo) throws Exception{
+    private void uploadDirectoryContents(File directory, String relativePath) throws Exception{
         for (File file : directory.listFiles()) {
             if (file.isFile()) {
 
@@ -144,7 +144,7 @@ public class GitHubManagerService {
                 runner.add(new Pair<>(base, relativePath + "/" + file.getName()));
 
             } else if (file.isDirectory()) {
-                uploadDirectoryContents(file, relativePath + "/" + file.getName(), repo);
+                uploadDirectoryContents(file, relativePath + "/" + file.getName());
             }
         }
     }
@@ -169,7 +169,7 @@ public class GitHubManagerService {
     private void uploadFileToGitHub(String codeBase64, String realtive,String repo) {
 
         String repoOwner = environment.getProperty("github.repo.owner");
-        String apiUrl = "/repos/"+repoOwner+"/"+repo+"/contents/project8"+realtive;
+        String apiUrl = "/repos/"+repoOwner+"/"+repo+"/contents/project"+realtive;
         HttpMethod httpMethod = HttpMethod.PUT;
 
         String requestBody =  "{" +
