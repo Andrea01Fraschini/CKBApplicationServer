@@ -25,7 +25,7 @@ public class Tournament {
 
     @Indexed(unique = true)
     private String title;
-
+    private String educator_creator;
     private boolean is_open;
     private List<TournamentSubscriber> subscribed_users;
     private List<TournamentManager> educators;

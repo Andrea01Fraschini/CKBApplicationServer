@@ -75,6 +75,16 @@ public class NotificationService {
         }
     }
 
+    public void sendEliminationGroup(Group group, Battle battle) {
+        var message = "\n" +
+                "Your group has been eliminated from the battle '%s' because the number of participants does not meet the number required in the battle"
+                .formatted(battle.getTitle());
+
+        for (var member : group.getMembers()) {
+            sendNotification(member.getEmail(), message);
+        }
+    }
+
     /**
      * Sends a notification to a user
      * @param user_email User email used for identification and for sending an email

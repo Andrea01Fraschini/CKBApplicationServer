@@ -68,6 +68,7 @@ public class TournamentService {
                 .educators(List.of(new TournamentManager(educator)))
                 .subscribed_users(List.of())
                 .battles(List.of())
+                .educator_creator(username)
                 .build();
 
         tournamentRepository.insert(tournament);

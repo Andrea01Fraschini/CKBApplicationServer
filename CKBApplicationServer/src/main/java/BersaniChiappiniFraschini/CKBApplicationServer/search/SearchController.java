@@ -2,7 +2,6 @@ package BersaniChiappiniFraschini.CKBApplicationServer.search;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
-import BersaniChiappiniFraschini.CKBApplicationServer.user.UserInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
