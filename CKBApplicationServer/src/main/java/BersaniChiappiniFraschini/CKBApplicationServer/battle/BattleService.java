@@ -190,6 +190,7 @@ public class BattleService {
     }
 
     public Runnable startBattle(Tournament tournament, Battle battle) {
+        // TODO: automatic deletion of pending invites (can be omitted ?)
         return () -> {
             // TODO: Call GitHubManager to create repository
             var repositoryUrl = "";
