@@ -6,11 +6,13 @@ import net.sourceforge.pmd.PmdAnalysis;
 import net.sourceforge.pmd.Report;
 import net.sourceforge.pmd.lang.LanguageRegistry;
 
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 public class JavaQualityAnalyzer {
-    private static final String rulesetPath = "";
+    private static final URL rulesetPath = JavaQualityAnalyzer.class.getClassLoader().getResource("ECAConfig/quickstart.xml");
     private final QualityScoreProcessor scoreProcessor;
 
     public int runAnalysis(String pathToCheck, String compiledPath, String javaVersion) {
@@ -18,7 +20,7 @@ public class JavaQualityAnalyzer {
         config.setDefaultLanguageVersion(LanguageRegistry.findLanguageByTerseName("java").getVersion(javaVersion));
         config.addInputPath(Path.of(pathToCheck));
         if (compiledPath != null) config.prependAuxClasspath(compiledPath); // path to jar, helps process checks
-        config.addRuleSet(rulesetPath);
+        config.addRuleSet(Objects.requireNonNull(rulesetPath).getPath());
 
         try (PmdAnalysis pmd = PmdAnalysis.create(config)) {
             Report report = pmd.performAnalysisAndCollectReport();

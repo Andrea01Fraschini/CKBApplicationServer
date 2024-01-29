@@ -9,7 +9,7 @@ public class QualityScoreProcessor {
 
     public QualityScoreProcessor() {
         scoresMap.put(0, 100);
-        scoresMap.put(6, 75);
+        scoresMap.put(1, 75);
         scoresMap.put(21, 50);
         scoresMap.put(51, 25);
         scoresMap.put(101, 0);

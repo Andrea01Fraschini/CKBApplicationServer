@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 @NoArgsConstructor
 public class JavaECARunner implements ECARunner {
@@ -16,7 +15,7 @@ public class JavaECARunner implements ECARunner {
     private final static JavaQualityAnalyzer qualityAnalyzer = new JavaQualityAnalyzer(new QualityScoreProcessor());
     private final static String DEFAULT_JAVA_VERSION = "17";
     private String jarPath = null;
-    private String javaVersion;
+    private String javaVersion = DEFAULT_JAVA_VERSION;
 
     public JavaECARunner(String jarPath) {
         this.jarPath = jarPath;
@@ -38,6 +37,6 @@ public class JavaECARunner implements ECARunner {
             if (result != null) results.put(param, result);
         }
 
-        return results; 
+        return results;
     }
 }
