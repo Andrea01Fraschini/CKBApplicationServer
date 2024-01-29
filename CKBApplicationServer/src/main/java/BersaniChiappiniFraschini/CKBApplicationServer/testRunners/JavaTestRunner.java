@@ -28,25 +28,33 @@ import java.util.stream.Collectors;
 public class JavaTestRunner implements  TestRunner {
     public Map<String, TestStatus> launchUnitTests(String projectDirectory, String testsFileName, String buildScriptFileName) throws Exception {
         if (projectDirectory == null || testsFileName == null || buildScriptFileName == null) return null;
-        compileJavaProject(projectDirectory, buildScriptFileName);
+        compileJavaProject(projectDirectory, buildScriptFileName, true);
         var jarPath = getJarPath(projectDirectory);
-        Class<?> testClass = loadTestClassFromJar(jarPath, buildScriptFileName);
+        Class<?> testClass = loadTestClassFromJar(jarPath, testsFileName);
         return runTests(testClass);
     }
 
-    private void compileJavaProject(String projectDirectory, String buildScriptFileName) throws Exception {
+    private void compileJavaProject(String projectDirectory, String buildScriptFileName, boolean debug) throws Exception {
         // Build the command to run the build script
         var directory = new File(projectDirectory);
         ProcessBuilder processBuilder = new ProcessBuilder(
                 "bash",
-                "%s/%s".formatted(directory.getParent(), buildScriptFileName));
-        processBuilder.directory(directory);
+                "%s".formatted(buildScriptFileName));
+        processBuilder.directory(directory.getParentFile());
 
         // Redirect the process output to the console
         processBuilder.redirectErrorStream(true);
 
         // Start the process
         Process process = processBuilder.start();
+
+        if (debug) {
+            var reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        }
 
         int exitCode = process.waitFor();
         if (exitCode != 0) throw new Exception("Build failure");
@@ -67,7 +75,7 @@ public class JavaTestRunner implements  TestRunner {
         var reader = new BufferedReader(new InputStreamReader(inputStream));
 
         // Read the output line by line
-        String output = reader.lines().map(line -> line + "\n").collect(Collectors.joining());
+        String output = reader.lines().collect(Collectors.joining());
 
         var exitCode = process.waitFor();
         if (exitCode != 0) throw new Exception("No file found");
@@ -123,7 +131,8 @@ public class JavaTestRunner implements  TestRunner {
 
     // Finds the name of the package where the file is located in the jar file.
     public String findCanonicalNameInJar(String jarFilePath, String targetClassName) throws IOException {
-        try (JarFile jarFile = new JarFile(jarFilePath)) {
+        File file = new File(jarFilePath);
+        try (JarFile jarFile = new JarFile(file)) {
             Enumeration<JarEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
