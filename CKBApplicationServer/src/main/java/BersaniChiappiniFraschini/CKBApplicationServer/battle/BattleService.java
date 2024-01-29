@@ -177,6 +177,8 @@ public class BattleService {
         //TODO: to manage error
         String token = authenticationService.generateToken(id);
 
+        //TODO: how to get the file of the project?
+
         // Create group
         Group group = Group.builder()
                 .id(id)
@@ -209,21 +211,24 @@ public class BattleService {
     }
 
     public Runnable startBattle(Tournament tournament, Battle battle) {
-        // TODO: automatic deletion of pending invites (can be omitted ?)
+        // automatic deletion of pending invites (can be omitted ?)
+        List<Group> gourpsUpdate = automaticControl(tournament, battle);
+
         return () -> {
-            // TODO: Call GitHubManager to create repository
-            var repositoryUrl = battle.getRepository();
+            /*
+            var repositoryUrl = battleNew.getRepository();
 
             var query = Query.query(
                     Criteria.where("_id")
                             .is(new ObjectId(tournament.getId()))
                             .and("battles._id")
-                            .is(new ObjectId(battle.getId()))
+                            .is(new ObjectId(battleNew.getId()))
             );
             var update = new Update().set("repository", repositoryUrl);
             mongoTemplate.updateFirst(query, update, "tournament");
+            */
 
-            for (var group : battle.getGroups()) {
+            for (var group : gourpsUpdate) {
                 String token = group.getAPI_Token();
                 Runnable taskSendEmail = () -> notificationService.sendRepositoryInvites(group, battle, token);
                 executor.submit(taskSendEmail);
@@ -231,6 +236,37 @@ public class BattleService {
         };
     }
 
+    private List<Group> automaticControl(Tournament tournament, Battle battle){
+        List<Group> groups = battle.getGroups();
+        Iterator<Group> iterator = groups.iterator();
+
+        while (iterator.hasNext()) {
+            Group group = iterator.next();
+
+            // Condizione per rimuovere l'elemento
+            if (group.getMembers().size() < battle.getMin_group_size() || group.getMembers().size() > battle.getMax_group_size()) {
+
+                Runnable taskSendEmail = () -> notificationService.sendEliminationGroup(group, battle);
+                executor.submit(taskSendEmail);
+
+                iterator.remove();
+            }else {
+                group.getPending_invites().clear();
+            }
+        }
+
+        // save the changes in the db
+        var query = Query.query(
+                Criteria.where("_id")
+                        .is(new ObjectId(tournament.getId()))
+                        .and("battles._id")
+                        .is(new ObjectId(battle.getId()))
+        );
+        var update = new Update().set("groups", groups);
+        mongoTemplate.updateFirst(query, update, "tournament");
+
+        return groups;
+    }
     // The tournamentTitle is the tournament's title in which I can find the battleTitle
     public ResponseEntity<Object> getBattle(String tournamentTitle, String battleTitle) {
         // look if is a student or educator
