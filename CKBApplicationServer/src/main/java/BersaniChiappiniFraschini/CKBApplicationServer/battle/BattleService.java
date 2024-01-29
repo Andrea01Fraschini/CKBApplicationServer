@@ -1,8 +1,10 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.authentication.AuthenticationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.TimedEvent;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
+import BersaniChiappiniFraschini.CKBApplicationServer.githubManager.GitHubManagerService;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupMember;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
@@ -30,10 +32,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -46,6 +49,11 @@ public class BattleService {
     private final NotificationService notificationService;
     private final UserDetailsService userDetailsService;
     private final InviteService inviteService;
+
+    private final AuthenticationService authenticationService;
+
+    private final GitHubManagerService gitHubManagerService;
+
     private final EventService eventService;
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
@@ -67,8 +75,7 @@ public class BattleService {
         // Check if duplicate
         if (tournament.getBattles()
                 .stream()
-                .anyMatch(battle -> battle_title.equals(battle.getTitle())))
-        {
+                .anyMatch(battle -> battle_title.equals(battle.getTitle()))) {
             var res = new PostResponse("Battle with title %s already exists".formatted(battle_title));
             return ResponseEntity.badRequest().body(res);
         }
@@ -80,6 +87,11 @@ public class BattleService {
         var submission_deadline = request.getSubmission_deadline();
         var manual_evaluation = request.isManual_evaluation();
         var eval_parameters = request.getEvaluation_parameters();
+
+        // add the repository for the battle
+        String repository = gitHubManagerService.createRepository(tournament.getTitle(), battle_title);
+
+        // TODO: upload the file of the project
 
         // Create new battle
         Battle battle = Battle.builder()
@@ -93,6 +105,7 @@ public class BattleService {
                 .manual_evaluation(manual_evaluation)
                 .evaluation_parameters(List.of()) // TODO: put actual evaluation parameters
                 .groups(List.of())
+                .repository(repository)
                 .build();
 
         // Register battle start event
@@ -160,14 +173,20 @@ public class BattleService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
         }
 
+        String id = ObjectId.get().toString();
+        //TODO: to manage error
+        String token = authenticationService.generateToken(id);
+
         // Create group
         Group group = Group.builder()
-                .id(ObjectId.get().toString())
+                .id(id)
                 .leader(new GroupMember(student))
                 .members(List.of(new GroupMember(student)))
                 .pending_invites(invites.stream().map(PendingInvite::new).toList())
                 .scores(new HashMap<>()) // TODO: create map from battle evaluation parameters
-                .repository(null)
+                // TODO: The repository of the battle?
+                .repository(battle.getRepository())
+                .API_Token(token)
                 .build();
 
         // Send invites
@@ -205,8 +224,7 @@ public class BattleService {
             mongoTemplate.updateFirst(query, update, "tournament");
 
             for (var group : battle.getGroups()) {
-                // TODO: Generate API token
-                var token = "";
+                String token = group.getAPI_Token();
                 Runnable taskSendEmail = () -> notificationService.sendRepositoryInvites(group, battle, token);
                 executor.submit(taskSendEmail);
             }
@@ -214,7 +232,7 @@ public class BattleService {
     }
 
     // The tournamentTitle is the tournament's title in which I can find the battleTitle
-    public ResponseEntity<Object> getBattle(String tournamentTitle, String battleTitle){
+    public ResponseEntity<Object> getBattle(String tournamentTitle, String battleTitle) {
         // look if is a student or educator
 
         /*
@@ -245,7 +263,7 @@ public class BattleService {
         Aggregation aggregation = Aggregation.newAggregation(match, unwind, match2, project1);
         AggregationResults<Map> results = mongoTemplate.aggregate(aggregation, "tournament", Map.class);
 
-        if(results.getMappedResults().size() == 0){
+        if (results.getMappedResults().size() == 0) {
             return new ResponseEntity<>(new PostResponse("Battle not found"), HttpStatus.BAD_REQUEST);
         }
 
@@ -256,7 +274,7 @@ public class BattleService {
                 .battle(battle)
                 .build();
 
-        for (Group g : groups){
+        for (Group g : groups) {
             Map<String, Integer> score = g.getScores();
             int sum = score.values().stream().mapToInt(Integer::intValue).sum();
             String leader = g.getLeader().getUsername();
@@ -288,25 +306,25 @@ public class BattleService {
                 Group myGroup = null;
 
                 // IDENTIFY MY GROUP
-                for(Group g : groups){
-                   for(GroupMember gr : g.getMembers()){
-                       if(gr.getUsername().equals(username)){
-                           myGroup = g;
-                           break;
-                       }
-                   }
+                for (Group g : groups) {
+                    for (GroupMember gr : g.getMembers()) {
+                        if (gr.getUsername().equals(username)) {
+                            myGroup = g;
+                            break;
+                        }
+                    }
 
-                   if (myGroup != null) break;
+                    if (myGroup != null) break;
                 }
 
-                if(myGroup != null){
+                if (myGroup != null) {
                     int totalScore = battleInfoResponse.getScore(myGroup.getLeader().getUsername());
 
                     // scruttura battle + gruppo + totalscore
                     BattleInfoStudent battleInfoStudent = new BattleInfoStudent(myGroup, totalScore, battle, battleInfoResponse.getLeaderboard());
 
                     return new ResponseEntity<>(battleInfoStudent, HttpStatus.ACCEPTED);
-                }else{
+                } else {
                     BattleInfoStudent battleInfoStudent = new BattleInfoStudent();
                     battleInfoStudent.setBattle(battle);
                     return new ResponseEntity<>(battleInfoStudent, HttpStatus.ACCEPTED);
@@ -331,18 +349,18 @@ public class BattleService {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    private class BattleInfoStudent{
-            private Group group;
-            private int total_score;
-            private Battle battle;
+    private class BattleInfoStudent {
+        private Group group;
+        private int total_score;
+        private Battle battle;
 
-            private Map<String, Integer> pointGroups;
+        private Map<String, Integer> pointGroups;
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    private class BattleInfoEducator{
+    private class BattleInfoEducator {
         private List<Group> groups;
         private Battle battle;
         private Map<String, Integer> pointGroups;
