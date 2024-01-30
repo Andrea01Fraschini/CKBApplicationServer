@@ -243,6 +243,7 @@ public class BattleService {
         };
     }
 
+    // TODO TEST
     private List<Group> automaticControl(Tournament tournament, Battle battle){
         List<Group> groups = battle.getGroups();
         Iterator<Group> iterator = groups.iterator();
