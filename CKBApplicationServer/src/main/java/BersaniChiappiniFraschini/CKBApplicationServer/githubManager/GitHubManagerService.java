@@ -87,8 +87,9 @@ public class GitHubManagerService {
 
     }
 
-    //After all protect the repository only fork the group can do
+    //TODO: After all protect the repository only fork the group can do
 
+    //TODO: DOWNLOAD FROM RESPOSITORY OF THE GROUP
 
     private ResponseRequest sendRequest(HttpMethod httpMethod, String apiUrl, String requestBody) {
         String githubApiUrlBase = environment.getProperty("github.api.url");

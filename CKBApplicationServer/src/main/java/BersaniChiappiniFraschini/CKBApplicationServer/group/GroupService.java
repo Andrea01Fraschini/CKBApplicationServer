@@ -1,6 +1,8 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.group;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
+import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -8,6 +10,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -46,5 +51,38 @@ public class GroupService {
                 .filterArray(Criteria.where("group._id").is(new ObjectId(group_id)));
 
         mongoTemplate.updateFirst(query, update, "tournament");
+    }
+
+    public ResponseEntity<PostResponse> setRepository(GroupRequest groupRequest) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+
+        AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
+        if (accountType != AccountType.STUDENT) {
+            var res = new PostResponse("Cannot set repository of the group");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
+        }
+
+        var username = auth.getName();
+
+
+        if(!username.equals(groupRequest.getGroup_leader())){
+            var res = new PostResponse("Only leader of the group can modify the repository");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
+        }
+
+
+        Query query = new Query(Criteria.where("_id")
+                .is(new ObjectId(groupRequest.getTournament_id()))
+                .and("battles.groups._id").is(new ObjectId(groupRequest.getGroup_id())));
+
+        var update = new Update()
+                .pull("battles.$.groups.$[group].repository", groupRequest.getRepository())
+                .filterArray(Criteria.where("group._id").is(new ObjectId(groupRequest.getGroup_id())));
+
+        mongoTemplate.updateFirst(query, update, "tournament");
+
+
+        var res = new PostResponse("OK");
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(res);
     }
 }
