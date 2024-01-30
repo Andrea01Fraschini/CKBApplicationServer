@@ -9,6 +9,12 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.*;
 import org.antlr.v4.runtime.misc.Pair;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.TransportException;
+import org.eclipse.jgit.lib.ProgressMonitor;
+import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.json.HTTP;
 import org.json.JSONObject;
 import org.kohsuke.github.*;
@@ -31,8 +37,9 @@ import java.util.concurrent.Future;
 @RequiredArgsConstructor
 public class GitHubManagerService {
     private final Environment environment;
+
+    // we can use it to upload the file in a thread
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
-    private ArrayList<Pair<String, String>> runner = new ArrayList<>();
 
     // Create Repository for the battle
     public String createRepository(String tournamentTitle, String battleTitle, String description){
@@ -96,6 +103,7 @@ public class GitHubManagerService {
             GHRef localBranch = repository.getRef("heads/main");
             localBranch.updateTo(commit.getSHA1());
 
+            protectRepo(repo);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (Exception e) {
@@ -105,10 +113,59 @@ public class GitHubManagerService {
         return true;
     }
 
-    // TODO: After all protect the repository only fork the group can do
+    // After all protect the repository only fork the group can do
+    public void protectRepo(String repo){
+        String[] splittedArray = repo.split("/");
+        String name = splittedArray[splittedArray.length - 1];
 
-    // TODO: DOWNLOAD FROM RESPOSITORY OF THE GROUP
+        String githubToken = environment.getProperty("github.token");
+        String owner = environment.getProperty("github.repo.owner");
 
+        try {
+            GitHub github = new GitHubBuilder().withOAuthToken(githubToken).build();
+
+
+            GHRepository repoGit = github.getRepository(owner+"/"+name);
+
+            GHBranchProtectionBuilder protectionBuilder = repoGit.getBranch("main").enableProtection();
+            protectionBuilder.includeAdmins(false);
+            protectionBuilder.requireReviews();
+            protectionBuilder.requireCodeOwnReviews(true);
+            protectionBuilder.dismissStaleReviews(true);
+
+
+            protectionBuilder.enable();
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    // DOWNLOAD FROM RESPOSITORY OF THE GROUP
+    public String downloadRepo(String repo, String path){
+        try {
+            String githubRepoUrl = repo+".git";
+
+            File localRepoDir = new File(path);
+
+            ProgressMonitor progressMonitor = new TextProgressMonitor();
+
+            // Clona la repository
+            Git.cloneRepository()
+                    .setURI(githubRepoUrl)
+                    .setDirectory(localRepoDir)
+                    .setProgressMonitor(progressMonitor)
+                    .call();
+
+            return localRepoDir.getAbsolutePath();
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 
     private void uploadDirectoryContents(File directory, String relativePath, GHTreeBuilder treeBuilder) throws Exception{
         for (File file : directory.listFiles()) {

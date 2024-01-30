@@ -33,4 +33,12 @@ public class GitHubController {
     ){
         return gitHubManagerService.setCodeRepository(repository, pathFile, battleTitle);
     }
+
+    @GetMapping("/download")
+    public String downlaodCode(
+            @RequestParam String repository,
+            @RequestParam String path
+    ){
+        return gitHubManagerService.downloadRepo(repository, path);
+    }
 }
