@@ -37,9 +37,9 @@ public class JavaECARunner implements ECARunner {
         for (var param : evaluationParameters) {
             Integer result = null;
             switch (param) {
-                case Quality -> result = qualityAnalyzer.runAnalysis(projectDirectory, jarPath, javaVersion);
-                case Reliability -> result = reliabilityAnalyzer.runAnalysis();
-                case Security -> result = securityAnalyzer.runAnalysis();
+                case QUALITY -> result = qualityAnalyzer.runAnalysis(projectDirectory, jarPath, javaVersion);
+                case RELIABILITY -> result = reliabilityAnalyzer.runAnalysis();
+                case SECURITY -> result = securityAnalyzer.runAnalysis();
             }
             if (result != null) results.put(param, result);
         }
