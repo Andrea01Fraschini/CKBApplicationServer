@@ -28,10 +28,12 @@ public class DemoController {
 
     @PostMapping
     public ResponseEntity<String> test2(
-            @RequestBody TournamentCreationRequest request
+            //@RequestBody TournamentCreationRequest request
     ){
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
-        return ResponseEntity.ok("Hello %s".formatted(name) + request.toString());
+        String message = "Hello %s".formatted(name);
+        System.out.println(message);
+        return ResponseEntity.ok(message);
     }
 }

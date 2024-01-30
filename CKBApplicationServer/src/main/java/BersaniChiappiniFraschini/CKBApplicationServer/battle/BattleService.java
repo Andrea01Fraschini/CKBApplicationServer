@@ -18,6 +18,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.*;
 import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
@@ -222,7 +223,7 @@ public class BattleService {
 
     public Runnable startBattle(Tournament tournament, Battle battle) {
         // automatic deletion of pending invites (can be omitted ?)
-        List<Group> gourpsUpdate = automaticControl(tournament, battle);
+        List<Group> groupsUpdate = automaticControl(tournament, battle);
 
         return () -> {
             /*
@@ -238,7 +239,7 @@ public class BattleService {
             mongoTemplate.updateFirst(query, update, "tournament");
             */
 
-            for (var group : gourpsUpdate) {
+            for (var group : groupsUpdate) {
                 String token = group.getAPI_Token();
                 Runnable taskSendEmail = () -> notificationService.sendRepositoryInvites(group, battle, token);
                 executor.submit(taskSendEmail);
@@ -305,15 +306,17 @@ public class BattleService {
         AggregationOperation match2 = Aggregation.match(
                 Criteria.where("battles.title").is(battleTitle)
         );
-        AggregationOperation project1 = Aggregation.project("battles");
-        Aggregation aggregation = Aggregation.newAggregation(match, unwind, match2, project1);
-        AggregationResults<Map> results = mongoTemplate.aggregate(aggregation, "tournament", Map.class);
+        AggregationOperation project = Aggregation.replaceRoot("battles");
 
-        if (results.getMappedResults().size() == 0) {
+        Aggregation aggregation = Aggregation.newAggregation(match, unwind, match2, project);
+        AggregationResults<Battle> results = mongoTemplate.aggregate(aggregation, "tournament", Battle.class);
+
+        Battle battle = results.getUniqueMappedResult();
+
+        if (battle == null) {
             return new ResponseEntity<>(new PostResponse("Battle not found"), HttpStatus.BAD_REQUEST);
         }
 
-        Battle battle = (Battle) results.getMappedResults().get(0).get("battles");
         List<Group> groups = battle.getGroups();
 
         BattleInfoResponseGeneral battleInfoResponseGeneral = BattleInfoResponseGeneral.builder()
@@ -373,18 +376,20 @@ public class BattleService {
                     if (myGroup != null) break;
                 }
 
+                BattleInfoStudent battleInfoStudent = new BattleInfoStudent();
+
                 if (myGroup != null) {
                     int totalScore = battleInfoResponseGeneral.getScore(myGroup.getLeader().getUsername());
 
-                    // struttura battle + gruppo + totalscore
-                    BattleInfoStudent battleInfoStudent = new BattleInfoStudent(myGroup, totalScore, battleInfo, battleInfoResponseGeneral.getLeaderboard());
-
-                    return new ResponseEntity<>(battleInfoStudent, HttpStatus.ACCEPTED);
-                } else {
-                    BattleInfoStudent battleInfoStudent = new BattleInfoStudent();
+                    battleInfoStudent.setGroup(myGroup);
+                    battleInfoStudent.setTotal_score(totalScore);
                     battleInfoStudent.setBattle(battleInfo);
-                    return new ResponseEntity<>(battleInfoStudent, HttpStatus.ACCEPTED);
+                    battleInfoStudent.setPointGroups(battleInfoResponseGeneral.getLeaderboard());
+                } else {
+                    battleInfoStudent.setBattle(battleInfo);
                 }
+
+                return new ResponseEntity<>(battleInfoStudent, HttpStatus.OK);
             }
             // for educator the list of groups
             /*
@@ -395,33 +400,34 @@ public class BattleService {
              */
             case EDUCATOR -> {
                 BattleInfoEducator battleInfoEducator = new BattleInfoEducator();
+
                 battleInfoEducator.setBattle(battleInfo);
-
                 battleInfoEducator.setGroups(battle.getGroups());
-
                 battleInfoEducator.setLeaderBoard(battleInfoResponseGeneral.getLeaderboard());
-                return new ResponseEntity<>(battleInfoEducator, HttpStatus.ACCEPTED);
+
+                return new ResponseEntity<>(battleInfoEducator, HttpStatus.OK);
             }
         }
 
+        // This line is unreachable.
+        // The account type is determined by the authentication service and so will always be a valid enum
         return new ResponseEntity<>(new PostResponse("Not found ACCOUNT TYPE"), HttpStatus.BAD_REQUEST);
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    private class BattleInfoStudent {
+    public class BattleInfoStudent {
         private Group group;
         private int total_score;
         private BattleInfo battle;
-
         private Map<String, Integer> pointGroups;
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    private class BattleInfoEducator {
+    public class BattleInfoEducator {
         private List<Group> groups;
         private BattleInfo battle;
         private Map<String, Integer> leaderBoard;
@@ -441,4 +447,5 @@ public class BattleService {
         private boolean manual_evaluation;
         private List<EvalParameter> evaluation_parameters;
     }
+
 }
