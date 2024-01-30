@@ -3,7 +3,7 @@ package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 public enum EvalParameter {
     TESTS,
     TIMELINESS,
-    MANUAL
+    MANUAL,
     QUALITY,
     SECURITY,
     RELIABILITY

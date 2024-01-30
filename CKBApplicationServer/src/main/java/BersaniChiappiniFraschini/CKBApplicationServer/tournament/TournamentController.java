@@ -34,4 +34,12 @@ public class TournamentController {
 
         return tournamentService.getTournament(tournamentTitle);
     }
+
+    @PostMapping ("/closing")
+    public ResponseEntity<PostResponse> closeTournament(
+            @RequestParam String tournamentTitle
+    ){
+
+        return tournamentService.closeTournament(tournamentTitle);
+    }
 }

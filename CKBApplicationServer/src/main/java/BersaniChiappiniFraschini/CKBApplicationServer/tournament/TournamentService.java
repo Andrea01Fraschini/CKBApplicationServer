@@ -1,6 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
+import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.search.BattleInfo;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -159,5 +161,48 @@ public class TournamentService {
         tournamentGetResponse.setRank(tournament.getRank_students());
 
         return new ResponseEntity<>(tournamentGetResponse, HttpStatus.ACCEPTED);
+    }
+
+    public ResponseEntity<PostResponse> closeTournament(String tournamentTitle){
+        //check if an educator
+        var context = SecurityContextHolder.getContext();
+        var auth = context.getAuthentication();
+
+        AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
+        if(accountType != AccountType.EDUCATOR){
+            var res = new PostResponse("Cannot close a tournament as student");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
+        }
+
+        //control all battles are closed
+        Tournament tournament = tournamentRepository.findTournamentByTitle(tournamentTitle);
+        List<Battle> battles = tournament.getBattles();
+        Date date = new Date();
+
+
+        for(Battle b : battles){
+            if(!date.after(b.getSubmission_deadline())){
+                PostResponse postResponse = new PostResponse("Not all battle are closed");
+                return ResponseEntity.badRequest().body(postResponse);
+            }
+        }
+
+        // Since there are no badges then the final score will be the sum
+        // of the evaluations and therefore the members of a group will have the same score
+
+        // So my hypothesis is that every time there is a push, the point of the group will be updated and also the personal
+
+        // if we had also to implement the badge, here I would compute and add the badge score for each subscribed
+
+        // notice every student in the group must be in the subscribed list but not the viceversa
+        // updateScores(tournament);
+
+        for(TournamentSubscriber u : tournament.getSubscribed_users()) {
+            Runnable taskSendEmail = () -> notificationService.sendEvailableRanksGlobal(u.getEmail(), tournamentTitle);
+            executor.submit(taskSendEmail);
+        }
+
+        PostResponse postResponse = new PostResponse("OK");
+        return ResponseEntity.ok().body(postResponse);
     }
 }
