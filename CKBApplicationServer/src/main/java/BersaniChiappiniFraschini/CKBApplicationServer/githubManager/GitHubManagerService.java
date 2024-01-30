@@ -150,13 +150,10 @@ public class GitHubManagerService {
 
             File localRepoDir = new File(path);
 
-            ProgressMonitor progressMonitor = new TextProgressMonitor();
-
-            // Clona la repository
+            // Clone the repository
             Git.cloneRepository()
                     .setURI(githubRepoUrl)
                     .setDirectory(localRepoDir)
-                    .setProgressMonitor(progressMonitor)
                     .call();
 
             return localRepoDir.getAbsolutePath();
