@@ -1,6 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
+import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.search.BattleInfo;
@@ -186,7 +187,15 @@ public class TournamentService {
             }
         }
 
-        updateScores(tournament);
+        // Since there are no badges then the final score will be the sum
+        // of the evaluations and therefore the members of a group will have the same score
+
+        // So my hypothesis is that every time there is a push, the point of the group will be updated and also the personal
+
+        // if we had also to implement the badge, here I would compute and add the badge score for each subscribed
+
+        // notice every student in the group must be in the subscribed list but not the viceversa
+        // updateScores(tournament);
 
         for(TournamentSubscriber u : tournament.getSubscribed_users()) {
             Runnable taskSendEmail = () -> notificationService.sendEvailableRanksGlobal(u.getEmail(), tournamentTitle);
@@ -195,9 +204,5 @@ public class TournamentService {
 
         PostResponse postResponse = new PostResponse("OK");
         return ResponseEntity.ok().body(postResponse);
-    }
-
-    private void  updateScores(Tournament tournament){
-        
     }
 }

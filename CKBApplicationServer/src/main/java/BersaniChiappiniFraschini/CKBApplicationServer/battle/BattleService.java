@@ -10,10 +10,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupMember;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentManager;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.*;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.*;
@@ -249,6 +246,7 @@ public class BattleService {
     private List<Group> automaticControl(Tournament tournament, Battle battle){
         List<Group> groups = battle.getGroups();
         Iterator<Group> iterator = groups.iterator();
+        List<TournamentSubscriber> tournamentSubscribers = tournament.getSubscribed_users();
 
         while (iterator.hasNext()) {
             Group group = iterator.next();
@@ -262,6 +260,17 @@ public class BattleService {
                 iterator.remove();
             }else {
                 group.getPending_invites().clear();
+
+                // check if a Student in a group member the same student must be in the subscribed student of the tournament
+                List<GroupMember> member = group.getMembers();
+
+                // work on the id
+                for(GroupMember g : member){
+                    String id = g.getId();
+                    if(!searchList(tournamentSubscribers, id)){
+                        tournamentSubscribers.add(new TournamentSubscriber(g.getId(), g.getUsername(), g.getEmail(), 0));
+                    }
+                }
             }
         }
 
@@ -273,9 +282,27 @@ public class BattleService {
                         .is(new ObjectId(battle.getId()))
         );
         var update = new Update().set("groups", groups);
+
         mongoTemplate.updateFirst(query, update, "tournament");
 
+        var query2 = Query.query(
+                Criteria.where("_id")
+                        .is(new ObjectId(tournament.getId()))
+        );
+
+        var update2 = new Update().set("subscribed_users", tournamentSubscribers);
+        mongoTemplate.updateFirst(query2, update2, "tournament");
+
         return groups;
+    }
+
+    private boolean searchList(List<TournamentSubscriber> tournamentSubscribers, String id){
+        for(TournamentSubscriber t : tournamentSubscribers) {
+            if (t.getId().equals(id)) {
+                return true;
+            }
+        }
+        return false;
     }
     // The tournamentTitle is the tournament's title in which I can find the battleTitle
     public ResponseEntity<Object> getBattle(String tournamentTitle, String battleTitle) {
