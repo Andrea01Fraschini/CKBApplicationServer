@@ -5,7 +5,6 @@ import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.TimedEvent;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.githubManager.GitHubManagerService;
-import BersaniChiappiniFraschini.CKBApplicationServer.group.EvaluationType;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupMember;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
@@ -195,7 +194,7 @@ public class BattleService {
                 .leader(new GroupMember(student))
                 .members(List.of(new GroupMember(student)))
                 .pending_invites(invites.stream().map(PendingInvite::new).toList())
-                .scores(new HashMap<EvaluationType, Integer>())
+                .scores(new HashMap<EvalParameter, Integer>())
                 //The repository of the group to do the download (fork)
                 .repository("")
                 .API_Token(token)
@@ -322,7 +321,7 @@ public class BattleService {
                 .build();
 
         for (Group g : groups) {
-            Map<EvaluationType, Integer> score = g.getScores();
+            Map<EvalParameter, Integer> score = g.getScores();
             int sum = score.values().stream().mapToInt(Integer::intValue).sum();
             String leader = g.getLeader().getUsername();
             battleInfoResponseGeneral.addScore(leader, sum);
