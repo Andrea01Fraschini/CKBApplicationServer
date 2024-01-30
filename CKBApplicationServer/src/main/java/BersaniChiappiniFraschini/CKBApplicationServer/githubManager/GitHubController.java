@@ -28,8 +28,17 @@ public class GitHubController {
     @GetMapping("/upload")
     public boolean createCode(
             @RequestParam String repository,
+            @RequestParam String battleTitle,
             @RequestParam String pathFile
     ){
-        return gitHubManagerService.setCodeRepository(repository, pathFile);
+        return gitHubManagerService.setCodeRepository(repository, pathFile, battleTitle);
+    }
+
+    @GetMapping("/download")
+    public String downlaodCode(
+            @RequestParam String repository,
+            @RequestParam String path
+    ){
+        return gitHubManagerService.downloadRepo(repository, path);
     }
 }

@@ -85,6 +85,14 @@ public class NotificationService {
         }
     }
 
+    public void notifyGlobalRanksAvailable(String email, String tournamentTitle) {
+        var message = "\n" +
+                "Final ranking of the tournament '%s' now available, hurry and see it!!!"
+                        .formatted(tournamentTitle);
+        sendNotification(email, message);
+
+    }
+
     /**
      * Sends a notification to a user
      * @param user_email User email used for identification and for sending an email

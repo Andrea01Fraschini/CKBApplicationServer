@@ -8,8 +8,16 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.*;
 import org.antlr.v4.runtime.misc.Pair;
+import org.apache.commons.io.IOUtils;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.TransportException;
+import org.eclipse.jgit.lib.ProgressMonitor;
+import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.json.HTTP;
 import org.json.JSONObject;
+import org.kohsuke.github.*;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -20,10 +28,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -32,155 +37,149 @@ import java.util.concurrent.Future;
 @RequiredArgsConstructor
 public class GitHubManagerService {
     private final Environment environment;
+
+    // we can use it to upload the file in a thread
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
-    private ArrayList<Pair<String, String>> runner = new ArrayList<>();
-
-    //Create Repository for the battle
+    // Create Repository for the battle
     public String createRepository(String tournamentTitle, String battleTitle, String description){
-        String apiUrl = "/user/repos";
-        HttpMethod httpMethod = HttpMethod.POST;
-        String requestBody =  "{\n" +
-                "    \"name\": \""+tournamentTitle+"-"+battleTitle+"\",\n" +
-                "    \"description\": \""+description+"\",\n" +
-                "    \"homepage\": \"battle_ckb\",\n" +
-                "    \"private\": false,\n" +
-                "    \"visibility\": \"public\",\n" +
-                "    \"auto_init\": true,\n" +
-                "    \"allow_squash_merge\": false,\n" +
-                "    \"allow_merge_commit\": false,\n" +
-                "    \"allow_auto_merge\": false\n" +
-                "}";
 
-        ResponseRequest response = sendRequest(httpMethod, apiUrl, requestBody);
+        String githubToken = environment.getProperty("github.token");
+        String owner = environment.getProperty("github.repo.owner");
 
-        if (response.code == HttpStatus.CREATED.value()) {
-            return (String) response.body.get("html_url");
-        } else {
-            return "ERROR";
+        try {
+            GitHub github = new GitHubBuilder().withOAuthToken(githubToken).build();
+            // Creazione della nuova repository
+            GHCreateRepositoryBuilder createRepositoryBuilder = github
+                    .createRepository(tournamentTitle+"-"+battleTitle)
+                    .autoInit(true)
+                    .owner(owner)
+                    .allowForking(true)
+                    .gitignoreTemplate("Java")
+                    .private_(false)
+                    .description(description);
+
+            // Esecuzione effettiva della creazione
+            GHRepository newRepository = createRepositoryBuilder.create();
+            System.out.println("Nuova repository creata: " + newRepository.getHtmlUrl());
+
+            return newRepository.getHtmlUrl().toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    //Upload the code of the battle
-    public boolean setCodeRepository(String repository, String pathFile){
+    // Upload the code of the battle
+    public boolean setCodeRepository(String repo, String pathFile, String battleTitle){
+        String githubToken = environment.getProperty("github.token");
+        String owner = environment.getProperty("github.repo.owner");
 
-        String[] splittedArray = repository.split("/");
+        String[] splittedArray = repo.split("/");
         String name = splittedArray[splittedArray.length - 1];
 
         try {
-            uploadDirectoryContents(new File(pathFile), "");
+            GitHub github = new GitHubBuilder().withOAuthToken(githubToken).build();
+            GHRepository repository = github.getRepository(owner + "/" + name);
+            GHRef masterRef = repository.getRef("heads/main");  // Sostituisci con il nome della tua branch
+            String baseTreeSha = masterRef.getObject().getSha();
 
-            Runnable request = () -> {
 
-                for(Pair<String, String> r : runner){
-                    uploadFileToGitHub(r.a, r.b, name);
-                }
-            };
+            GHTreeBuilder treeBuilder = repository.createTree();
+            treeBuilder.baseTree(baseTreeSha);
+            // build the tree with the files
+            uploadDirectoryContents(new File(pathFile), battleTitle, treeBuilder);
 
-            executor.submit(request);
+            // Crea un nuovo albero
+            GHTree tree = treeBuilder.create();
 
-            return true;
-        }catch (Exception e){
-            System.out.println(e.getMessage());
-            return false;
-        }
+            // Crea un nuovo commit
+            GHCommit commit = repository.createCommit()
+                    .message("Added project")
+                    .tree(tree.getSha())
+                    .parent(baseTreeSha)
+                    .committer(owner, "code.kata.battle.bcf@example.com",new Date())
+                    .create();
 
-    }
+            GHRef localBranch = repository.getRef("heads/main");
+            localBranch.updateTo(commit.getSHA1());
 
-    //TODO: After all protect the repository only fork the group can do
-
-    //TODO: DOWNLOAD FROM RESPOSITORY OF THE GROUP
-
-    private ResponseRequest sendRequest(HttpMethod httpMethod, String apiUrl, String requestBody) {
-        String githubApiUrlBase = environment.getProperty("github.api.url");
-        String githubToken = environment.getProperty("github.token");
-
-        HttpResponse<Map> response = null;
-
-        try {
-            Unirest.setObjectMapper(new com.mashape.unirest.http.ObjectMapper() {
-                final ObjectMapper mapper = new ObjectMapper();
-                @SneakyThrows
-                public String writeValue(Object value) {
-                    return mapper.writeValueAsString(value);
-                }
-                @SneakyThrows
-                public <T> T readValue(String value, Class<T> valueType) {
-                    return mapper.readValue(value, valueType);
-                }
-            });
-
-            if(httpMethod == HttpMethod.POST) {
-                response = Unirest.post(githubApiUrlBase + apiUrl)
-                        .header("Content-Type", "application/json")
-                        .header("Authorization", "Bearer " + githubToken)
-                        .body(requestBody).asObject(Map.class);
-            }else if(httpMethod == HttpMethod.PUT){
-                response = Unirest.put(githubApiUrlBase + apiUrl)
-                        .header("Content-Type", "application/json")
-                        .header("Authorization", "Bearer " + githubToken)
-                        .body(requestBody).asObject(Map.class);
-            }
-
-        } catch (UnirestException e) {
+            protectRepo(repo);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
-        return ResponseRequest.builder()
-                .code(response.getStatus())
-                .body(response.getBody())
-                .build();
+        return true;
     }
 
-    private void uploadDirectoryContents(File directory, String relativePath) throws Exception{
-        for (File file : directory.listFiles()) {
-            if (file.isFile()) {
+    // After all protect the repository only fork the group can do
+    public void protectRepo(String repo){
+        String[] splittedArray = repo.split("/");
+        String name = splittedArray[splittedArray.length - 1];
 
-                String base = getFile(file);
-
-                if(base == null){
-                    throw new Exception("Null bas");
-                }
-
-                runner.add(new Pair<>(base, relativePath + "/" + file.getName()));
-
-            } else if (file.isDirectory()) {
-                uploadDirectoryContents(file, relativePath + "/" + file.getName());
-            }
-        }
-    }
-
-    private String getFile(File directory){
-        Path folderPath = directory.toPath();
-        String codeBase64;
-        byte[] file;
-
+        String githubToken = environment.getProperty("github.token");
+        String owner = environment.getProperty("github.repo.owner");
 
         try {
-            file = Files.readAllBytes(folderPath);
-            codeBase64 = Base64.getEncoder().encodeToString(file);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            codeBase64 = null;
-        }
+            GitHub github = new GitHubBuilder().withOAuthToken(githubToken).build();
 
-        return codeBase64;
+
+            GHRepository repoGit = github.getRepository(owner+"/"+name);
+
+            GHBranchProtectionBuilder protectionBuilder = repoGit.getBranch("main").enableProtection();
+            protectionBuilder.includeAdmins(false);
+            protectionBuilder.requireReviews();
+            protectionBuilder.requireCodeOwnReviews(true);
+            protectionBuilder.dismissStaleReviews(true);
+
+
+            protectionBuilder.enable();
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private void uploadFileToGitHub(String codeBase64, String realtive,String repo) {
 
-        String repoOwner = environment.getProperty("github.repo.owner");
-        String apiUrl = "/repos/"+repoOwner+"/"+repo+"/contents/project"+realtive;
-        HttpMethod httpMethod = HttpMethod.PUT;
+    // DOWNLOAD FROM RESPOSITORY OF THE GROUP
+    public String downloadRepo(String repo, String path){
+        try {
+            String githubRepoUrl = repo+".git";
 
-        String requestBody =  "{" +
-                "\n" +
-                "    \"message\":\"Added the code for the battle "+realtive+"\",\n" +
-                "    \"committer\": {\"name\":\""+repoOwner+"\",\"email\":\"code.kata.battle.git@github.com\"},\n" +
-                "    \"content\": \""+codeBase64+"\"\n" +
-                "}";
+            File localRepoDir = new File(path);
 
-       sendRequest(httpMethod, apiUrl, requestBody);
+            // Clone the repository
+            Git.cloneRepository()
+                    .setURI(githubRepoUrl)
+                    .setDirectory(localRepoDir)
+                    .call();
+
+            return localRepoDir.getAbsolutePath();
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private void uploadDirectoryContents(File directory, String relativePath, GHTreeBuilder treeBuilder) throws Exception{
+        for (File file : directory.listFiles()) {
+            if(file.getName().equals(".idea") || file.getName().equals("target")){
+                continue;
+            }else if (file.isFile()) {
+
+                System.out.println(file.toURI());
+
+                byte[] fileRead = Files.readAllBytes(file.toPath());
+
+                treeBuilder = treeBuilder.add(relativePath + "/" + file.getName(), fileRead, false);
+
+            } else if (file.isDirectory()) {
+                uploadDirectoryContents(file, relativePath + "/" + file.getName(), treeBuilder);
+            }
+        }
     }
 
     @Builder
