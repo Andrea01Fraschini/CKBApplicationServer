@@ -35,10 +35,11 @@ public class GitHubController {
     }
 
     @GetMapping("/download")
-    public String downlaodCode(
+    public String downloadCode(
             @RequestParam String repository,
             @RequestParam String path
     ){
         return gitHubManagerService.downloadRepo(repository, path);
     }
+
 }
