@@ -2,6 +2,8 @@ package BersaniChiappiniFraschini.CKBApplicationServer.ecaRunners;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.EvalParameter;
 import BersaniChiappiniFraschini.CKBApplicationServer.ecaRunners.JavaECAs.JavaQualityAnalyzer;
+import BersaniChiappiniFraschini.CKBApplicationServer.ecaRunners.JavaECAs.JavaReliabilityAnalyzer;
+import BersaniChiappiniFraschini.CKBApplicationServer.ecaRunners.JavaECAs.JavaSecurityAnalyzer;
 import BersaniChiappiniFraschini.CKBApplicationServer.ecaRunners.JavaECAs.QualityScoreProcessor;
 import lombok.NoArgsConstructor;
 
@@ -11,8 +13,11 @@ import java.util.Map;
 
 @NoArgsConstructor
 public class JavaECARunner implements ECARunner {
-    // This could be over-engineered to have a Map of StaticAnalyzers, but that's too much work
+    // This could be changed to a Map of StaticAnalyzers
     private final static JavaQualityAnalyzer qualityAnalyzer = new JavaQualityAnalyzer(new QualityScoreProcessor());
+    private final static JavaReliabilityAnalyzer reliabilityAnalyzer = new JavaReliabilityAnalyzer();
+    private final static JavaSecurityAnalyzer securityAnalyzer = new JavaSecurityAnalyzer();
+
     private final static String DEFAULT_JAVA_VERSION = "17";
     private String jarPath = null;
     private String javaVersion = DEFAULT_JAVA_VERSION;
@@ -32,7 +37,9 @@ public class JavaECARunner implements ECARunner {
         for (var param : evaluationParameters) {
             Integer result = null;
             switch (param) {
-                case Quality -> result = qualityAnalyzer.runAnalysis(projectDirectory, jarPath, javaVersion);
+                case QUALITY -> result = qualityAnalyzer.runAnalysis(projectDirectory, jarPath, javaVersion);
+                case RELIABILITY -> result = reliabilityAnalyzer.runAnalysis();
+                case SECURITY -> result = securityAnalyzer.runAnalysis();
             }
             if (result != null) results.put(param, result);
         }

@@ -9,7 +9,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public abstract class EventService {
+public class EventService {
     private static final ScheduledExecutorService taskScheduler = Executors.newScheduledThreadPool(10);
     private static final Map<String, Runnable> registeredEvents = new HashMap<>();
 
