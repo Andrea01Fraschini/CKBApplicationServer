@@ -64,12 +64,10 @@ public class GroupService {
 
         var username = auth.getName();
 
-
         if(!username.equals(groupRequest.getGroup_leader())){
             var res = new PostResponse("Only leader of the group can modify the repository");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
         }
-
 
         Query query = new Query(Criteria.where("_id")
                 .is(new ObjectId(groupRequest.getTournament_id()))
@@ -80,7 +78,6 @@ public class GroupService {
                 .filterArray(Criteria.where("group._id").is(new ObjectId(groupRequest.getGroup_id())));
 
         mongoTemplate.updateFirst(query, update, "tournament");
-
 
         var res = new PostResponse("OK");
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(res);

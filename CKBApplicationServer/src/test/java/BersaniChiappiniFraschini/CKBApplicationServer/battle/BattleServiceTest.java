@@ -155,7 +155,7 @@ class BattleServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "I'm a student", authorities = {"STUDENT"})
+    @WithMockUser(username = "I'm a student", authorities = { "STUDENT" })
     public void shouldEnrollGroup(){
         BattleEnrollmentRequest request = new BattleEnrollmentRequest(
                 "Tournament title",

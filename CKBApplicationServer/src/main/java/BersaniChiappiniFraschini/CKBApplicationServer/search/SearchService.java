@@ -1,14 +1,9 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.search;
 
 
-import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
-import BersaniChiappiniFraschini.CKBApplicationServer.dashboard.CardInfoEducator;
-import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentCreationRequest;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
@@ -20,12 +15,13 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +30,6 @@ public class SearchService {
     private final TournamentRepository tournamentRepository;
     private final UserRepository userRepository ;
     private final MongoTemplate mongoTemplate;
-
 
     public List<TournamentInfo> searchTournaments(){
         List<Tournament> tournaments = tournamentRepository.findAll();
@@ -64,7 +59,6 @@ public class SearchService {
 
         return battlesInfo;
     }
-
 
     public List<BattleInfo> searchBattle(String battleTitle){
 

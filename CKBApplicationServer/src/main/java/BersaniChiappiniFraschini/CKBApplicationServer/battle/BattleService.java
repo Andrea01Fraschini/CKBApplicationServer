@@ -111,6 +111,7 @@ public class BattleService {
                 .description(description)
                 .enrollment_deadline(enrollment_deadline)
                 .submission_deadline(submission_deadline)
+                .evaluation_parameters(eval_parameters)
                 .manual_evaluation(manual_evaluation)
                 .evaluation_parameters(List.of()) // TODO: put actual evaluation parameters
                 .groups(List.of())
@@ -262,7 +263,7 @@ public class BattleService {
                 executor.submit(taskSendEmail);
 
                 iterator.remove();
-            }else {
+            } else {
                 group.getPending_invites().clear();
 
                 // check if a Student in a group member the same student must be in the subscribed student of the tournament
@@ -336,9 +337,9 @@ public class BattleService {
         AggregationOperation match2 = Aggregation.match(
                 Criteria.where("battles.title").is(battleTitle)
         );
-        AggregationOperation project = Aggregation.replaceRoot("battles");
+        AggregationOperation replaceRoot = Aggregation.replaceRoot("battles");
 
-        Aggregation aggregation = Aggregation.newAggregation(match, unwind, match2, project);
+        Aggregation aggregation = Aggregation.newAggregation(match, unwind, match2, replaceRoot);
         AggregationResults<Battle> results = mongoTemplate.aggregate(aggregation, "tournament", Battle.class);
 
         Battle battle = results.getUniqueMappedResult();

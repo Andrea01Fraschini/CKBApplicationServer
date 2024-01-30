@@ -19,6 +19,6 @@ public class BattleCreationRequest {
     private Date enrollment_deadline;
     private Date submission_deadline;
     private boolean manual_evaluation;
-    private List<String> evaluation_parameters;
+    private List<EvalParameter> evaluation_parameters;
     // TODO: add files ?
 }
