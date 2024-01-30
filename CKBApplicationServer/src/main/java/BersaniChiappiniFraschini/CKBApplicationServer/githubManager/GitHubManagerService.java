@@ -34,7 +34,7 @@ public class GitHubManagerService {
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
     private ArrayList<Pair<String, String>> runner = new ArrayList<>();
 
-    //Create Repository for the battle
+    // Create Repository for the battle
     public String createRepository(String tournamentTitle, String battleTitle, String description){
 
         String githubToken = environment.getProperty("github.token");
@@ -62,7 +62,7 @@ public class GitHubManagerService {
         }
     }
 
-    //Upload the code of the battle
+    // Upload the code of the battle
     public boolean setCodeRepository(String repo, String pathFile, String battleTitle){
         String githubToken = environment.getProperty("github.token");
         String owner = environment.getProperty("github.repo.owner");
@@ -118,18 +118,9 @@ public class GitHubManagerService {
 
                 System.out.println(file.toURI());
 
-
                 byte[] fileRead = Files.readAllBytes(file.toPath());
 
-                if(relativePath.equals("")){
-                    System.out.println("EQUAL NULL");
-                    System.out.println(file.getName());
-                    treeBuilder = treeBuilder.add(file.getName(), fileRead, false);
-                }else {
-                    System.out.println(relativePath + "/" + file.getName());
-                    treeBuilder = treeBuilder.add(relativePath + "/" + file.getName(), fileRead, false);
-                }
-
+                treeBuilder = treeBuilder.add(relativePath + "/" + file.getName(), fileRead, false);
 
             } else if (file.isDirectory()) {
                 uploadDirectoryContents(file, relativePath + "/" + file.getName(), treeBuilder);
