@@ -1,5 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
 public enum EvalParameter {
-    Quality
+    QUALITY,
+    SECURITY,
+    RELIABILITY
 }
