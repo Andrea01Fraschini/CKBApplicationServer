@@ -3,6 +3,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
+import BersaniChiappiniFraschini.CKBApplicationServer.search.BattleInfo;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -65,6 +68,7 @@ public class TournamentService {
                 .educators(List.of(new TournamentManager(educator)))
                 .subscribed_users(List.of())
                 .battles(List.of())
+                .educator_creator(username)
                 .build();
 
         tournamentRepository.insert(tournament);
@@ -118,11 +122,42 @@ public class TournamentService {
 
         return ResponseEntity.ok(null);
     }
-  
+
     public void addBattle(String tournament_title, Battle battle) {
         var update = new Update();
         update.push("battles", battle);
         var criteria = Criteria.where("title").in(tournament_title);
         mongoTemplate.updateFirst(Query.query(criteria), update, "tournament");
+    }
+
+    public ResponseEntity<TournamentGetResponse> getTournament(String tournamentTitle){
+        Tournament tournament = tournamentRepository.findTournamentByTitle(tournamentTitle);
+
+        if(tournament == null){
+            new ResponseEntity<>(new PostResponse("Tournament doesn't found"), HttpStatus.BAD_REQUEST);
+        }
+
+        List<BattleInfo> battleInfos = new ArrayList<>();
+        Date today = new Date();
+
+        for(Battle b : tournament.getBattles()){
+            battleInfos.add(
+                    new BattleInfo(
+                            tournamentTitle,
+                            b.getTitle(),
+                            !today.after(b.getEnrollment_deadline()),
+                            b.getEnrollment_deadline(),
+                            b.getGroups().size()
+                            )
+            );
+        }
+
+        TournamentGetResponse tournamentGetResponse = TournamentGetResponse.builder()
+                .battleInfo(battleInfos)
+                .build();
+
+        tournamentGetResponse.setRank(tournament.getRank_students());
+
+        return new ResponseEntity<>(tournamentGetResponse, HttpStatus.ACCEPTED);
     }
 }

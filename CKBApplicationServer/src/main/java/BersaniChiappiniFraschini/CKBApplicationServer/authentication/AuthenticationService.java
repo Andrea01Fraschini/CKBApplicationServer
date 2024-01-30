@@ -64,11 +64,6 @@ public class AuthenticationService {
         return ResponseEntity.ok(AuthenticationResponse.builder().token(jwt).build());
     }
 
-    private void storePasswordInMicroservice(String username, String email, String password){
-        sendPostRequest("/registerNewAccount", new StorePasswordRequest(username, email, password));
-    }
-
-
     // ================================= LOGIN =================================
     public ResponseEntity<AuthenticationResponse> login(LoginRequest request) {
         String key = request.getEmail_or_username();
@@ -86,6 +81,25 @@ public class AuthenticationService {
         String jwt = jwtService.generateJWT(user);
         return ResponseEntity.ok(AuthenticationResponse.builder().token(jwt).build());
     }
+
+    // ==================== GENERATION TOKEN FOR GROUP ===========================
+    public String generateToken(String idGroup){
+        HttpResponse<ReturnMessage> response = generateTokenRequest(idGroup);
+        if(response.getBody().code == 200){
+            return response.getBody().message;
+        }else {
+            return "ERROR";
+        }
+    }
+
+    private HttpResponse<ReturnMessage> generateTokenRequest(String idGroup){
+       return sendPostRequest("/generateAuthToken", new RequestToken(idGroup));
+    }
+
+    private void storePasswordInMicroservice(String username, String email, String password){
+        sendPostRequest("/registerNewAccount", new StorePasswordRequest(username, email, password));
+    }
+
 
     private boolean authenticate(String username_or_email, String password){
         HttpResponse<ReturnMessage> response = sendPostRequest("/auth",
@@ -133,4 +147,7 @@ public class AuthenticationService {
             String value
     ){}
 
+    private record RequestToken(
+            String id
+    ){}
 }
