@@ -10,7 +10,6 @@ import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupMember;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
-import BersaniChiappiniFraschini.CKBApplicationServer.search.SearchService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentManager;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
@@ -31,12 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,9 +49,7 @@ public class BattleService {
 
     private final GitHubManagerService gitHubManagerService;
 
-    private final EventService eventService;
-
-  private final ExecutorService executor = Executors.newFixedThreadPool(5);
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     public ResponseEntity<PostResponse> createBattle(BattleCreationRequest request) {
 
@@ -202,10 +194,11 @@ public class BattleService {
                 .leader(new GroupMember(student))
                 .members(List.of(new GroupMember(student)))
                 .pending_invites(invites.stream().map(PendingInvite::new).toList())
-                .scores(new HashMap<>()) // TODO: create map from battle evaluation parameters
-                // TODO: The repository of the battle?
-                .repository(battle.getRepository())
+                .scores(new HashMap<EvalParameter, Integer>())
+                //The repository of the group to do the download (fork)
+                .repository("")
                 .API_Token(token)
+                .done_manual_evaluation(false)
                 .build();
 
         // Send invites
@@ -323,15 +316,15 @@ public class BattleService {
         Battle battle = (Battle) results.getMappedResults().get(0).get("battles");
         List<Group> groups = battle.getGroups();
 
-        BattleInfoResponse battleInfoResponse = BattleInfoResponse.builder()
+        BattleInfoResponseGeneral battleInfoResponseGeneral = BattleInfoResponseGeneral.builder()
                 .battle(battle)
                 .build();
 
         for (Group g : groups) {
-            Map<String, Integer> score = g.getScores();
+            Map<EvalParameter, Integer> score = g.getScores();
             int sum = score.values().stream().mapToInt(Integer::intValue).sum();
             String leader = g.getLeader().getUsername();
-            battleInfoResponse.addScore(leader, sum);
+            battleInfoResponseGeneral.addScore(leader, sum);
         }
 
 
@@ -354,6 +347,16 @@ public class BattleService {
 
         var username = auth.getName();
 
+        BattleInfo battleInfo = new BattleInfo();
+        battleInfo.setTitle(battleTitle);
+        battleInfo.setRepository(battle.getRepository());
+        battleInfo.setMin_group_size(battle.getMin_group_size());
+        battleInfo.setMax_group_size(battle.getMax_group_size());
+        battleInfo.setManual_evaluation(battle.isManual_evaluation());
+        battleInfo.setEnrollment_deadline(battle.getEnrollment_deadline());
+        battleInfo.setSubmission_deadline(battle.getSubmission_deadline());
+        battleInfo.setEvaluation_parameters(battle.getEvaluation_parameters());
+
         switch (accountType) {
             case STUDENT -> {
                 Group myGroup = null;
@@ -371,15 +374,15 @@ public class BattleService {
                 }
 
                 if (myGroup != null) {
-                    int totalScore = battleInfoResponse.getScore(myGroup.getLeader().getUsername());
+                    int totalScore = battleInfoResponseGeneral.getScore(myGroup.getLeader().getUsername());
 
-                    // scruttura battle + gruppo + totalscore
-                    BattleInfoStudent battleInfoStudent = new BattleInfoStudent(myGroup, totalScore, battle, battleInfoResponse.getLeaderboard());
+                    // struttura battle + gruppo + totalscore
+                    BattleInfoStudent battleInfoStudent = new BattleInfoStudent(myGroup, totalScore, battleInfo, battleInfoResponseGeneral.getLeaderboard());
 
                     return new ResponseEntity<>(battleInfoStudent, HttpStatus.ACCEPTED);
                 } else {
                     BattleInfoStudent battleInfoStudent = new BattleInfoStudent();
-                    battleInfoStudent.setBattle(battle);
+                    battleInfoStudent.setBattle(battleInfo);
                     return new ResponseEntity<>(battleInfoStudent, HttpStatus.ACCEPTED);
                 }
             }
@@ -391,8 +394,13 @@ public class BattleService {
                 - score for group end type of evaluation
              */
             case EDUCATOR -> {
-                //TODO: I'M WAITING FOR TYPE OF EVALUTATION
-                return new ResponseEntity<>("TO DO", HttpStatus.ACCEPTED);
+                BattleInfoEducator battleInfoEducator = new BattleInfoEducator();
+                battleInfoEducator.setBattle(battleInfo);
+
+                battleInfoEducator.setGroups(battle.getGroups());
+
+                battleInfoEducator.setLeaderBoard(battleInfoResponseGeneral.getLeaderboard());
+                return new ResponseEntity<>(battleInfoEducator, HttpStatus.ACCEPTED);
             }
         }
 
@@ -405,7 +413,7 @@ public class BattleService {
     private class BattleInfoStudent {
         private Group group;
         private int total_score;
-        private Battle battle;
+        private BattleInfo battle;
 
         private Map<String, Integer> pointGroups;
     }
@@ -415,7 +423,22 @@ public class BattleService {
     @NoArgsConstructor
     private class BattleInfoEducator {
         private List<Group> groups;
-        private Battle battle;
-        private Map<String, Integer> pointGroups;
+        private BattleInfo battle;
+        private Map<String, Integer> leaderBoard;
+
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    private class BattleInfo {
+        private String title;
+        private int min_group_size;
+        private int max_group_size;
+        private String repository;
+        private Date enrollment_deadline;
+        private Date submission_deadline;
+        private boolean manual_evaluation;
+        private List<EvalParameter> evaluation_parameters;
     }
 }

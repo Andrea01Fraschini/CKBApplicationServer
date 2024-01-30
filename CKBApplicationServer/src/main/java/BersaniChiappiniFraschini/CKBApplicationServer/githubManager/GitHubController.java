@@ -15,12 +15,21 @@ public class GitHubController {
     private final GitHubManagerService gitHubManagerService;
 
     // for test
-    @GetMapping
+    @GetMapping("/create")
     public String register(
             @RequestParam String tournamentTitle,
             @RequestParam String battleTitle,
             @RequestParam String description
     ){
         return gitHubManagerService.createRepository(tournamentTitle, battleTitle, description);
+    }
+
+    // for test
+    @GetMapping("/upload")
+    public boolean createCode(
+            @RequestParam String repository,
+            @RequestParam String pathFile
+    ){
+        return gitHubManagerService.setCodeRepository(repository, pathFile);
     }
 }

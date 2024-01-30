@@ -1,5 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.group;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.battle.EvalParameter;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,12 +20,13 @@ import java.util.Map;
 @Document
 public class Group {
     @Id
-    private String id; //Work in Progress
+    private String id;
     private GroupMember leader;
     private List<GroupMember> members;
     private List<PendingInvite> pending_invites;
-    private Map<String, Integer> scores;
+    private Map<EvalParameter, Integer> scores;
     private String repository;
     private String API_Token;
     private Date last_update;
+    private boolean done_manual_evaluation;
 }
