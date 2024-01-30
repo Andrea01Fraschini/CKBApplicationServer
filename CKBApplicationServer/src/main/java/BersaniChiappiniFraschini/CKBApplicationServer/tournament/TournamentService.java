@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -159,5 +160,44 @@ public class TournamentService {
         tournamentGetResponse.setRank(tournament.getRank_students());
 
         return new ResponseEntity<>(tournamentGetResponse, HttpStatus.ACCEPTED);
+    }
+
+    public ResponseEntity<PostResponse> closeTournament(String tournamentTitle){
+        //check if an educator
+        var context = SecurityContextHolder.getContext();
+        var auth = context.getAuthentication();
+
+        AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
+        if(accountType != AccountType.EDUCATOR){
+            var res = new PostResponse("Cannot close a tournament as student");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
+        }
+
+        //control all battles are closed
+        Tournament tournament = tournamentRepository.findTournamentByTitle(tournamentTitle);
+        List<Battle> battles = tournament.getBattles();
+        Date date = new Date();
+
+
+        for(Battle b : battles){
+            if(!date.after(b.getSubmission_deadline())){
+                PostResponse postResponse = new PostResponse("Not all battle are closed");
+                return ResponseEntity.badRequest().body(postResponse);
+            }
+        }
+
+        updateScores(tournament);
+
+        for(TournamentSubscriber u : tournament.getSubscribed_users()) {
+            Runnable taskSendEmail = () -> notificationService.sendEvailableRanksGlobal(u.getEmail(), tournamentTitle);
+            executor.submit(taskSendEmail);
+        }
+
+        PostResponse postResponse = new PostResponse("OK");
+        return ResponseEntity.ok().body(postResponse);
+    }
+
+    private void  updateScores(Tournament tournament){
+        
     }
 }
