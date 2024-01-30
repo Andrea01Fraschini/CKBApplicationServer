@@ -113,7 +113,6 @@ public class BattleService {
                 .submission_deadline(submission_deadline)
                 .evaluation_parameters(eval_parameters)
                 .manual_evaluation(manual_evaluation)
-                .evaluation_parameters(List.of()) // TODO: put actual evaluation parameters
                 .groups(List.of())
                 .repository(repository)
                 .build();
