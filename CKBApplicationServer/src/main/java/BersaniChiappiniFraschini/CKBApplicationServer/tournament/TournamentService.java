@@ -198,7 +198,7 @@ public class TournamentService {
         // updateScores(tournament);
 
         for(TournamentSubscriber u : tournament.getSubscribed_users()) {
-            Runnable taskSendEmail = () -> notificationService.sendEvailableRanksGlobal(u.getEmail(), tournamentTitle);
+            Runnable taskSendEmail = () -> notificationService.notifyGlobalRanksAvailable(u.getEmail(), tournamentTitle);
             executor.submit(taskSendEmail);
         }
 
