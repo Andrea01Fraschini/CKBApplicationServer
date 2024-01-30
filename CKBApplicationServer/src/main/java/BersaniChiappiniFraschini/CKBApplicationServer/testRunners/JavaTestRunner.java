@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 
 public class JavaTestRunner implements TestRunner {
     public Map<String, TestStatus> launchUnitTests(String compiledProjectDirectory, String testsFileName) throws Exception {
@@ -64,15 +63,15 @@ public class JavaTestRunner implements TestRunner {
                 DisplayName displayNameAnnotation = method.getAnnotation(DisplayName.class);
                 // Initialize all as passed
                 if (displayNameAnnotation == null) {
-                    results.put(method.getName() + "()", TestStatus.Passed);
+                    results.put(method.getName() + "()", TestStatus.PASSED);
                 } else {
-                    results.put(displayNameAnnotation.value(), TestStatus.Passed);
+                    results.put(displayNameAnnotation.value(), TestStatus.PASSED);
                 }
             }
         }
 
         for (var failure : summary.getFailures()) {
-            results.put(failure.getTestIdentifier().getDisplayName(), TestStatus.Failed);
+            results.put(failure.getTestIdentifier().getDisplayName(), TestStatus.FAILED);
         }
 
         return results;
