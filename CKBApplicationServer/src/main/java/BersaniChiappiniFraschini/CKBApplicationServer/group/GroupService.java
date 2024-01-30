@@ -76,7 +76,7 @@ public class GroupService {
                 .and("battles.groups._id").is(new ObjectId(groupRequest.getGroup_id())));
 
         var update = new Update()
-                .pull("battles.$.groups.$[group].repository", groupRequest.getRepository())
+                .set("battles.$.groups.$[group].repository", groupRequest.getRepository())
                 .filterArray(Criteria.where("group._id").is(new ObjectId(groupRequest.getGroup_id())));
 
         mongoTemplate.updateFirst(query, update, "tournament");

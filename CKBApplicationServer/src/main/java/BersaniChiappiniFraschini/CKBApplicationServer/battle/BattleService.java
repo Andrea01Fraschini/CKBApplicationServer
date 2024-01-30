@@ -348,16 +348,15 @@ public class BattleService {
 
         var username = auth.getName();
 
-        BattleInfo battleInfo = BattleInfo.builder()
-                .title(battleTitle)
-                .repository(battle.getRepository())
-                .min_group_size(battle.getMin_group_size())
-                .max_group_size(battle.getMax_group_size())
-                .manual_evaluation(battle.isManual_evaluation())
-                .enrollment_deadline(battle.getEnrollment_deadline())
-                .submission_deadline(battle.getSubmission_deadline())
-                .evaluation_parameters(battle.getEvaluation_parameters())
-                .build();
+        BattleInfo battleInfo = new BattleInfo();
+        battleInfo.setTitle(battleTitle);
+        battleInfo.setRepository(battle.getRepository());
+        battleInfo.setMin_group_size(battle.getMin_group_size());
+        battleInfo.setMax_group_size(battle.getMax_group_size());
+        battleInfo.setManual_evaluation(battle.isManual_evaluation());
+        battleInfo.setEnrollment_deadline(battle.getEnrollment_deadline());
+        battleInfo.setSubmission_deadline(battle.getSubmission_deadline());
+        battleInfo.setEvaluation_parameters(battle.getEvaluation_parameters());
 
         switch (accountType) {
             case STUDENT -> {
@@ -433,7 +432,6 @@ public class BattleService {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    @Builder
     private class BattleInfo {
         private String title;
         private int min_group_size;
