@@ -85,7 +85,7 @@ public class NotificationService {
         }
     }
 
-    public void sendEvailableRanksGlobal(String email, String tournamentTitle) {
+    public void notifyGlobalRanksAvailable(String email, String tournamentTitle) {
         var message = "\n" +
                 "Final ranking of the tournament '%s' now available, hurry and see it!!!"
                         .formatted(tournamentTitle);
