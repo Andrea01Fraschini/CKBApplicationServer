@@ -194,7 +194,7 @@ public class BattleService {
                 .leader(new GroupMember(student))
                 .members(List.of(new GroupMember(student)))
                 .pending_invites(invites.stream().map(PendingInvite::new).toList())
-                .scores(new HashMap<EvalParameter, Integer>())
+                .scores(new HashMap<>())
                 //The repository of the group to do the download (fork)
                 .repository("")
                 .API_Token(token)
