@@ -11,6 +11,7 @@
 	<groupId>BersaniChiappiniFraschini</groupId>
 	<artifactId>CKBApplicationServer</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>war</packaging>
 	<name>CKBApplicationServer</name>
 	<description>Application server of Code Kata Battle</description>
 	<properties>
@@ -138,6 +139,19 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<plugin>
+    <artifactId>maven-war-plugin</artifactId>
+    <configuration>
+        <attachClasses>true</attachClasses>
+        <webXml>target/web.xml</webXml>
+        <webResources>
+            <resource>
+                <directory>src/main/webapp</directory>
+                <filtering>true</filtering>
+            </resource>
+        </webResources>
+    </configuration>
+</plugin>
 		</plugins>
 	</build>
 
