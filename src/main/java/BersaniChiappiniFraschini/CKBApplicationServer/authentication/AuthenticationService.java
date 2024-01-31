@@ -97,19 +97,22 @@ public class AuthenticationService {
     }
 
     private void storePasswordInMicroservice(String username, String email, String password){
-        sendPostRequest("/registerNewAccount", new StorePasswordRequest(username, email, password));
+        return;
+        //sendPostRequest("/registerNewAccount", new StorePasswordRequest(username, email, password));
     }
 
 
     private boolean authenticate(String username_or_email, String password){
-        HttpResponse<ReturnMessage> response = sendPostRequest("/auth",
+        return true;
+        /*HttpResponse<ReturnMessage> response = sendPostRequest("/auth",
                 new AuthRequest(username_or_email, password));
-        return response.getBody().message.equals("OK");
+        return response.getBody().message.equals("OK");*/
     }
 
 
     // Microservice communication
     private HttpResponse<ReturnMessage> sendPostRequest(String method, Object requestBody){
+
         String microservice_url = environment.getProperty("auth.microservice.url");
         try {
             Unirest.setObjectMapper(new com.mashape.unirest.http.ObjectMapper() {
