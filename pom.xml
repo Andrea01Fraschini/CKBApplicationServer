@@ -11,7 +11,6 @@
 	<groupId>BersaniChiappiniFraschini</groupId>
 	<artifactId>CKBApplicationServer</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
 	<name>CKBApplicationServer</name>
 	<description>Application server of Code Kata Battle</description>
 	<properties>

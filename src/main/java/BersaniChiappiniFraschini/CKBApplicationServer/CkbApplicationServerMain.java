@@ -8,13 +8,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 @SpringBootApplication
-public class CkbApplicationServerMain extends SpringBootServletInitializer {
-
-	@Override
-	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-		return application.sources(CkbApplicationServerMain.class);
-	}
-
+public class CkbApplicationServerMain{
 	public static void main(String[] args) {
 		SpringApplication.run(CkbApplicationServerMain.class, args);
 	}
