@@ -28,7 +28,7 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable) // to avoid any kind of
                 .cors(AbstractHttpConfigurer::disable) // problem with cors exceptions
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/auth/**").permitAll()) // Do not authenticate auth requests
+                        auth.requestMatchers("/auth/**", "/demo/push").permitAll()) // Do not authenticate auth requests
                 .authorizeHttpRequests(auth ->
                         auth.anyRequest().authenticated()) // Authenticate everything else
                 .sessionManagement(config ->

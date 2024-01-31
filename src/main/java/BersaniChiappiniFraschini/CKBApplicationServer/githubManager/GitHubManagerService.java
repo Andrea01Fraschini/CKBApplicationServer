@@ -146,7 +146,7 @@ public class GitHubManagerService {
     // DOWNLOAD FROM RESPOSITORY OF THE GROUP
     public String downloadRepo(String repo, String path){
         try {
-            String githubRepoUrl = repo+".git";
+            String githubRepoUrl = repo;
 
             File localRepoDir = new File(path);
 
@@ -154,7 +154,7 @@ public class GitHubManagerService {
             Git.cloneRepository()
                     .setURI(githubRepoUrl)
                     .setDirectory(localRepoDir)
-                    .call();
+                    .call().close();
 
             return localRepoDir.getAbsolutePath();
         } catch (GitAPIException e) {
