@@ -437,13 +437,12 @@ public class BattleService {
     }
 
     public Battle getBattleFromGroupId(String groupId){
-        AggregationOperation battles_unwind = Aggregation.unwind("battles");
         AggregationOperation battle_match = Aggregation.match(
-                Criteria.where("battles.groups._id").is(groupId)
+                Criteria.where("battles.groups._id").is(new ObjectId(groupId))
         );
+        AggregationOperation unwind = Aggregation.unwind("battles");
         AggregationOperation replaceRoot = Aggregation.replaceRoot("battles");
-
-        Aggregation aggregation = Aggregation.newAggregation(battles_unwind, battle_match, replaceRoot);
+        Aggregation aggregation = Aggregation.newAggregation(battle_match, unwind,  replaceRoot);
         AggregationResults<Battle> results = mongoTemplate.aggregate(aggregation, "tournament", Battle.class);
 
         return results.getUniqueMappedResult();

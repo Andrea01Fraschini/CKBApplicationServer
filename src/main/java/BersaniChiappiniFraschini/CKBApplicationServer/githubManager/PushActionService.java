@@ -55,8 +55,8 @@ public class PushActionService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No repository set for this group");
         }
 
-        Runnable task = () -> fetchTestAndUpdate(battle, group);
-        task.run();
+        //Runnable task = () -> fetchTestAndUpdate(battle, group);
+        //task.run();
 
         return ResponseEntity.ok("Push correctly received!");
     }
