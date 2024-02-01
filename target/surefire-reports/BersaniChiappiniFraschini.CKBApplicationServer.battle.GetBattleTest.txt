@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: BersaniChiappiniFraschini.CKBApplicationServer.battle.GetBattleTest
 -------------------------------------------------------------------------------
-Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.521 s -- in BersaniChiappiniFraschini.CKBApplicationServer.battle.GetBattleTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.396 s -- in BersaniChiappiniFraschini.CKBApplicationServer.battle.GetBattleTest

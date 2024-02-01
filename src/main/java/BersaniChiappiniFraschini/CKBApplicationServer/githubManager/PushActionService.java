@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -55,8 +56,8 @@ public class PushActionService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No repository set for this group");
         }
 
-        //Runnable task = () -> fetchTestAndUpdate(battle, group);
-        //task.run();
+        Runnable task = () -> fetchTestAndUpdate(battle, group);
+        task.run();
 
         return ResponseEntity.ok("Push correctly received!");
     }
@@ -70,7 +71,8 @@ public class PushActionService {
 
         try{
             try(var file = new FileInputStream("./repos/message.txt")){
-                System.out.println(new String(file.readAllBytes()));
+                String filecontents = new String(file.readAllBytes());
+                System.out.println(filecontents+"\n"+"Test file name: %s\nLanguage: %s".formatted(testFileName, language));
             }
         }catch (Exception ignored){}
 
