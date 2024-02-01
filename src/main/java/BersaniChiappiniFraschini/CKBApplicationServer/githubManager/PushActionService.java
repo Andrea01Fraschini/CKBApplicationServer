@@ -74,9 +74,15 @@ public class PushActionService {
                 String filecontents = new String(file.readAllBytes());
                 System.out.println(filecontents+"\n"+"Test file name: %s\nLanguage: %s".formatted(testFileName, language));
             }
-        }catch (Exception ignored){}
 
-        /*
+
+
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
+
+
+            /*
 
         // Test
         var evaluationParams = List.of(
@@ -97,21 +103,22 @@ public class PushActionService {
             throw new RuntimeException(e);
         }
 */
-
         // Clean
-        assert deleteDirectory(new File("./repos"));
+        deleteDirectory(new File("./repos"));
+
 
         // Update
-
     }
 
-    private static boolean deleteDirectory(File file) {
+
+
+    private static void deleteDirectory(File file) {
         File[] children = file.listFiles();
         if (children != null) {
             for (File child : children) {
                 deleteDirectory(child);
             }
         }
-        return file.delete();
+        file.delete();
     }
 }
