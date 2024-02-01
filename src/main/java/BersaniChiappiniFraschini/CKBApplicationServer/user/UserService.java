@@ -7,6 +7,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final UserDetailsService userDetailsService;
     private final MongoTemplate mongoTemplate;
 
 
@@ -40,6 +44,15 @@ public class UserService {
                         u.getUsername(),
                         u.getAccountType().name()))
                 .toList();
+    }
+
+    public ResponseEntity<UserController.UsernameAndType> getUserData() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        var user = (User) userDetailsService.loadUserByUsername(auth.getName());
+        return ResponseEntity.ok(new UserController.UsernameAndType(
+                user.getUsername(),
+                user.getAccountType().name()
+        ));
     }
 
     public void addNotification(String email, Notification notification){

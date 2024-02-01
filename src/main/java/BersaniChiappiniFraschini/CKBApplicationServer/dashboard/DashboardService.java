@@ -1,10 +1,8 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.dashboard;
-import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
-import com.mongodb.client.MongoCollection;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -56,7 +54,11 @@ public class DashboardService {
                             //battle_title
                             t.getTitle(),
                             //current_group_score
-                            group.getScores().values().stream().reduce(0, Integer::sum),
+                            group.getScoringParameters()
+                                    .stream()
+                                    .map(Group.ScoringParameter::score)
+                                    .mapToInt(Integer::intValue)
+                                    .sum(),
                             //last_update
                             group.getLast_update(),
                             //submission_deadline

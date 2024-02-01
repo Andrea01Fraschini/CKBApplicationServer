@@ -20,5 +20,7 @@ public class BattleCreationRequest {
     private Date submission_deadline;
     private boolean manual_evaluation;
     private List<EvalParameter> evaluation_parameters;
+    private String project_language;
+    private String tests_file_name;
     // TODO: add files ?
 }

@@ -31,6 +31,8 @@ public class Battle {
     private boolean manual_evaluation;
     private List<Group> groups;
     private List<EvalParameter> evaluation_parameters;
+    private String project_language;
+    private String tests_file_name;
 
     //TODO test
 }

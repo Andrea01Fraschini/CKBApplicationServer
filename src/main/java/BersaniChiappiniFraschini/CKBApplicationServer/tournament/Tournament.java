@@ -1,6 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
+import BersaniChiappiniFraschini.CKBApplicationServer.battle.LeaderboardEntry;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +13,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @Builder
@@ -32,5 +32,6 @@ public class Tournament {
     private List<PendingInvite> pending_invites;
     private List<Battle> battles;
     private Date subscription_deadline;
-    private Map<String, Integer> rank_students;
+    @Builder.Default
+    private List<LeaderboardEntry> leaderboard = List.of();
 }

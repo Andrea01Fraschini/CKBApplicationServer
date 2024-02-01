@@ -3,6 +3,7 @@ package BersaniChiappiniFraschini.CKBApplicationServer.notification;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentManager;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserService;
@@ -85,11 +86,35 @@ public class NotificationService {
         }
     }
 
-    public void notifyGlobalRanksAvailable(String email, String tournamentTitle) {
+    public void sendNewBattleRankAvailable(Group group, String tournamentTitle, String battleTitle) {
+        var message = "\n" +
+                "Final ranking of the battle '%s' in the tournament '%s' now available, hurry and see it!!!"
+                        .formatted(battleTitle, tournamentTitle);
+
+        for (var member : group.getMembers()) {
+            sendNotification(member.getEmail(), message);
+        }
+
+    }
+
+
+
+    public void sendGlobalRanksAvailable(String email, String tournamentTitle) {
         var message = "\n" +
                 "Final ranking of the tournament '%s' now available, hurry and see it!!!"
                         .formatted(tournamentTitle);
         sendNotification(email, message);
+
+    }
+
+    public void sendManualEvaluationRequired(Tournament tournament, String battleTitle) {
+        var message = "\n" +
+                "The manual evaluation is required in the battle '%s' of the tournament '%s'!"
+                        .formatted(tournament.getTitle(), battleTitle);
+
+        for (var manager : tournament.getEducators()) {
+            sendNotification(manager.getEmail(), message);
+        }
 
     }
 

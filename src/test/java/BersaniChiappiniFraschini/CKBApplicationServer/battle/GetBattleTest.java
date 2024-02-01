@@ -1,8 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.authentication.AuthenticationService;
-import BersaniChiappiniFraschini.CKBApplicationServer.battle.BattleService.BattleInfoEducator;
-import BersaniChiappiniFraschini.CKBApplicationServer.battle.BattleService.BattleInfoStudent;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.githubManager.GitHubManagerService;
@@ -89,7 +87,7 @@ class GetBattleTest {
                                 .id("ABCDEF0123456789ABBEDD01")
                                 .leader(leader)
                                 .members(List.of(leader,sender))
-                                .scores(scores)
+                                // .scores(scores) // TODO: change
                                 .build()))
                         .build(),
                         Battle.builder()
@@ -99,6 +97,7 @@ class GetBattleTest {
                                 .max_group_size(1)
                                 .build()))
                 .build();
+
         mongoTemplate.remove(new Query(), "tournament");
         mongoTemplate.insert(testingTournament, "tournament");
     }
@@ -106,32 +105,32 @@ class GetBattleTest {
     @Test
     @WithMockUser(username = "I'm a student", authorities = {"STUDENT"})
     public void shouldFindBattleAsStudent(){
-        var response = battleService.getBattle("Tournament title", "Battle title");
+        var response = battleService.getBattleInfo("Tournament title", "Battle title");
         var info = response.getBody();
         assertAll(
                 ()->assertEquals(HttpStatus.OK, response.getStatusCode()),
-                ()->assertTrue(info instanceof BattleInfoStudent)
+                ()->assertTrue(info instanceof BattleService.BattleInfo)
         );
     }
 
     @Test
     @WithMockUser(username = "I'm a manager!", authorities = {"EDUCATOR"})
     public void shouldFindBattleAsEducator(){
-        var response = battleService.getBattle("Tournament title", "Battle title");
+        var response = battleService.getBattleInfo("Tournament title", "Battle title");
         var info = response.getBody();
         assertAll(
                 ()->assertEquals(HttpStatus.OK, response.getStatusCode()),
-                ()->assertTrue(info instanceof BattleInfoEducator)
+                ()->assertTrue(info instanceof BattleService.BattleInfo)
         );
     }
 
     @Test
     @WithMockUser(username = "I'm a student", authorities = {"STUDENT"})
     public void shouldNotFindBattle(){
-        var response = battleService.getBattle("Tournament title", "Nonexistent battle");
+        var response = battleService.getBattleInfo("Tournament title", "Nonexistent battle");
         PostResponse info = (PostResponse) response.getBody();
         assertAll(
-                ()->assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode()),
+                ()->assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode()),
                 ()-> {
                     assert info != null;
                     assertEquals("Battle not found",info.getError_msg());

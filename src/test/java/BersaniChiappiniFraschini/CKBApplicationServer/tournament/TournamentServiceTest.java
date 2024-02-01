@@ -8,7 +8,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -41,6 +40,11 @@ class TournamentServiceTest {
     public void setup(){
         when(userDetailsService.loadUserByUsername(any()))
                 .thenReturn(User.builder().username("TestUser").build());
+
+        when(tournamentRepository.findTournamentByTitle(anyString()))
+                .thenReturn(Tournament.builder()
+                        .subscription_deadline(new Date(System.currentTimeMillis()+1000*60*60*60))
+                        .build());
     }
 
     @Test

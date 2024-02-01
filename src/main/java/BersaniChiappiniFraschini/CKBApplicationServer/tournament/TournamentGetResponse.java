@@ -1,27 +1,26 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 
-import BersaniChiappiniFraschini.CKBApplicationServer.dashboard.CardInfo;
-import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationDetails;
+import BersaniChiappiniFraschini.CKBApplicationServer.battle.LeaderboardEntry;
 import BersaniChiappiniFraschini.CKBApplicationServer.search.BattleInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class TournamentGetResponse {
-    private List<BattleInfo> battleInfo;
-    private Map<String, Integer> rankStudents;
-
-
-    public void setRank(Map<String, Integer> points){
-        this.rankStudents = points;
-    }
+    private boolean is_open;
+    private String creator;
+    private List<String> managers;
+    private List<BattleInfo> battles;
+    @Builder.Default
+    private List<LeaderboardEntry> leaderboard = List.of();
+    private Date subscription_deadline;
+    private boolean already_subscribed;
 }

@@ -4,6 +4,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.authentication.Authenticat
 import BersaniChiappiniFraschini.CKBApplicationServer.authentication.AuthenticationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.authentication.RegisterRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class GitHubController {
 
     private final GitHubManagerService gitHubManagerService;
+    private final PushActionService pushActionService;
 
     // for test
     @GetMapping("/create")
@@ -32,6 +34,14 @@ public class GitHubController {
             @RequestParam String pathFile
     ){
         return gitHubManagerService.setCodeRepository(repository, pathFile, battleTitle);
+    }
+
+    @PostMapping("/push")
+    public ResponseEntity<String> pushActionPerformed(
+            @RequestHeader(name = "Authorization") String authorization
+    ){
+
+        return pushActionService.fetchAndTestCode(authorization);
     }
 
     @GetMapping("/download")

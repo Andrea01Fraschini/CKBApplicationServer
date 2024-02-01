@@ -1,19 +1,31 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.group;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
+import BersaniChiappiniFraschini.CKBApplicationServer.battle.EvalParameter;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
+import BersaniChiappiniFraschini.CKBApplicationServer.search.SearchService;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
+import ch.qos.logback.core.model.INamedModel;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +53,7 @@ public class GroupService {
 
         mongoTemplate.updateFirst(query, update, "tournament");
     }
+
 
     public void rejectGroupInvite(String tournament_id, String group_id, User user) {
         Query query = new Query(Criteria.where("_id")

@@ -34,7 +34,6 @@ public class AuthenticationService {
         //Check if valid account type
         try{
             account_type = AccountType.valueOf(request.getAccount_type());
-            System.out.println(account_type);
         }catch (Exception ignored){
             var body = AuthenticationResponse.builder().error_msg("Invalid account type").build();
             return ResponseEntity.badRequest().body(body);
@@ -57,7 +56,7 @@ public class AuthenticationService {
             return ResponseEntity.badRequest().body(body);
         }
 
-        //storePasswordInMicroservice(user.getUsername(), user.getEmail(), request.getPassword());
+        storePasswordInMicroservice(user.getUsername(), user.getEmail(), request.getPassword());
         repository.insert(user);
 
         String jwt = jwtService.generateJWT(user);
@@ -70,12 +69,12 @@ public class AuthenticationService {
         String value = request.getPassword();
 
 
-        /*if (!authenticate(key, value)){
+        if (!authenticate(key, value)){
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(AuthenticationResponse.builder()
                             .error_msg("Login failed")
                             .build());
-        }*/
+        }
 
         var user = userDetailsService.loadUserByUsername(request.getEmail_or_username());
         String jwt = jwtService.generateJWT(user);
@@ -97,22 +96,19 @@ public class AuthenticationService {
     }
 
     private void storePasswordInMicroservice(String username, String email, String password){
-        return;
-        //sendPostRequest("/registerNewAccount", new StorePasswordRequest(username, email, password));
+        sendPostRequest("/registerNewAccount", new StorePasswordRequest(username, email, password));
     }
 
 
     private boolean authenticate(String username_or_email, String password){
-        return true;
-        /*HttpResponse<ReturnMessage> response = sendPostRequest("/auth",
+        HttpResponse<ReturnMessage> response = sendPostRequest("/auth",
                 new AuthRequest(username_or_email, password));
-        return response.getBody().message.equals("OK");*/
+        return response.getBody().message.equals("OK");
     }
 
 
     // Microservice communication
     private HttpResponse<ReturnMessage> sendPostRequest(String method, Object requestBody){
-
         String microservice_url = environment.getProperty("auth.microservice.url");
         try {
             Unirest.setObjectMapper(new com.mashape.unirest.http.ObjectMapper() {

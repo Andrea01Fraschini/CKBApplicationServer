@@ -14,8 +14,11 @@ public class TournamentManager {
     private String id;
     private String username;
 
+    private String email;
+
     public TournamentManager(User educator) {
         this.id = educator.getId();
         this.username = educator.getUsername();
+        this.email = educator.getEmail();
     }
 }

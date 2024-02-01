@@ -1,6 +1,5 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 
-import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 

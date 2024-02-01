@@ -5,10 +5,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.githubManager.GitHubManagerService;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentManager;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.*;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,6 +64,11 @@ class BattleServiceTest {
         when(tournamentRepository.findTournamentByTitle(anyString()))
                 .thenReturn(Tournament.builder()
                         .id("FFFFFF0123451989BBBBBB99")
+                        .subscribed_users(List.of(new TournamentSubscriber(
+                                User.builder()
+                                        .username("I'm a subscriber")
+                                        .build()
+                        )))
                         .educators(List.of(new TournamentManager(User.builder()
                                 .username("Tyler the creator")
                                 .build())))
@@ -94,7 +96,9 @@ class BattleServiceTest {
                 new Date(System.currentTimeMillis()+1000*60*60*24),
                 new Date(System.currentTimeMillis()+1000*60*60*24*5),
                 false,
-                List.of()
+                List.of(),
+                "java",
+                "test_file_name"
         );
 
         var response = battleService.createBattle(request);
@@ -115,7 +119,9 @@ class BattleServiceTest {
                 new Date(System.currentTimeMillis()+1000*60*60*24),
                 new Date(System.currentTimeMillis()+1000*60*60*24*5),
                 false,
-                List.of()
+                List.of(),
+                "java",
+                "test_file_name"
         );
 
         var response = battleService.createBattle(request);
@@ -138,7 +144,9 @@ class BattleServiceTest {
                 new Date(System.currentTimeMillis()+1000*60*60*24),
                 new Date(System.currentTimeMillis()+1000*60*60*24*5),
                 false,
-                List.of()
+                List.of(),
+                "java",
+                "test_file_name"
         );
 
         var response = battleService.createBattle(request);
@@ -155,7 +163,7 @@ class BattleServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "I'm a student", authorities = { "STUDENT" })
+    @WithMockUser(username = "I'm a subscriber", authorities = { "STUDENT" })
     public void shouldEnrollGroup(){
         BattleEnrollmentRequest request = new BattleEnrollmentRequest(
                 "Tournament title",
@@ -183,7 +191,7 @@ class BattleServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "I'm a student", authorities = {"STUDENT"})
+    @WithMockUser(username = "I'm a subscriber", authorities = {"STUDENT"})
     public void shouldNotEnrollIfNonExistentBattle(){
         BattleEnrollmentRequest request = new BattleEnrollmentRequest(
                 "Tournament title",
@@ -201,11 +209,16 @@ class BattleServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "I'm a student", authorities = {"STUDENT"})
+    @WithMockUser(username = "I'm a subscriber", authorities = {"STUDENT"})
     public void shouldNotEnrollAfterSubscriptionDeadline(){
         when(tournamentRepository.findTournamentByTitle(anyString()))
                 .thenReturn(Tournament.builder()
                         .id("FFFFFF0123451989BBBBBB99")
+                        .subscribed_users(List.of(new TournamentSubscriber(
+                                User.builder()
+                                        .username("I'm a subscriber")
+                                        .build()
+                        )))
                         .educators(List.of(new TournamentManager(User.builder()
                                 .username("Tyler the creator")
                                 .build())))
@@ -233,11 +246,16 @@ class BattleServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "I'm a student", authorities = {"STUDENT"})
+    @WithMockUser(username = "I'm a subscriber", authorities = {"STUDENT"})
     public void shouldNotEnrollIfWrongGroupSize(){
         when(tournamentRepository.findTournamentByTitle(anyString()))
                 .thenReturn(Tournament.builder()
                         .id("FFFFFF0123451989BBBBBB99")
+                        .subscribed_users(List.of(new TournamentSubscriber(
+                                User.builder()
+                                        .username("I'm a subscriber")
+                                        .build()
+                        )))
                         .educators(List.of(new TournamentManager(User.builder()
                                 .username("Tyler the creator")
                                 .build())))

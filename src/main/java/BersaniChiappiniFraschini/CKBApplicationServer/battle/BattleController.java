@@ -1,10 +1,10 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
-import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
@@ -34,6 +34,8 @@ public class BattleController {
             @RequestParam String tournamentTitle,
             @RequestParam String battleTitle
     ) {
-        return battleService.getBattle(tournamentTitle, battleTitle);
+        return battleService.getBattleInfo(tournamentTitle, battleTitle);
     }
+
+
 }

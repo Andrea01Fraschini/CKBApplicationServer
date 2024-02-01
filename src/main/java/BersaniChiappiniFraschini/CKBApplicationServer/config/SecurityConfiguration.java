@@ -26,9 +26,9 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable) // to avoid any kind of
-                .cors(AbstractHttpConfigurer::disable) // problem with cors exceptions
+                // .cors(AbstractHttpConfigurer::disable) // problem with cors exceptions
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/auth/**", "/demo/push").permitAll()) // Do not authenticate auth requests
+                        auth.requestMatchers("/auth/**", "/github/push").permitAll()) // Do not authenticate auth requests
                 .authorizeHttpRequests(auth ->
                         auth.anyRequest().authenticated()) // Authenticate everything else
                 .sessionManagement(config ->

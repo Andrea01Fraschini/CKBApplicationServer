@@ -1,6 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.user;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +32,12 @@ public class UserController {
             @RequestParam(value = "name") String name
     ){
         return userService.searchUserByName(name);
+    }
+
+    @GetMapping("/me")
+    @ResponseBody
+    public ResponseEntity<UsernameAndType> getUserDataB() {
+        return userService.getUserData();
     }
 
     public record UsernameAndType(

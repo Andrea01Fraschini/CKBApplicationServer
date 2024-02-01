@@ -1,24 +1,25 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
+
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
-import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
+import BersaniChiappiniFraschini.CKBApplicationServer.scores.ScoreService;
 import BersaniChiappiniFraschini.CKBApplicationServer.search.BattleInfo;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.jgit.internal.storage.file.PackReverseIndex;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -38,6 +39,8 @@ public class TournamentService {
     private final MongoTemplate mongoTemplate;
     private final InviteService inviteService;
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
+
+    private final ScoreService scoreService;
 
     public ResponseEntity<PostResponse> createTournament(TournamentCreationRequest request){
 
@@ -90,6 +93,13 @@ public class TournamentService {
 
     public ResponseEntity<PostResponse> subscribeTournament(TournamentSubscribeRequest request){
 
+        var tournament = tournamentRepository.findTournamentByTitle(request.getTitle());
+        // Check if tournament subscription deadline has expired
+        if (tournament.getSubscription_deadline().before(new Date())) {
+            var res = new PostResponse("Cannot subscribe to tournament, subscription deadline expired");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+        }
+
         var context = SecurityContextHolder.getContext();
         var auth = context.getAuthentication();
 
@@ -103,9 +113,8 @@ public class TournamentService {
         var title = request.getTitle();
 
         // I check if the user is already subscribed to the tournament
-        Optional<Tournament> tournament = tournamentRepository.findBySubscribed_user(username, title);
-
-        if(tournament.isPresent()){
+        Optional<Tournament> tournament_match = tournamentRepository.findBySubscribed_user(username, title);
+        if(tournament_match.isPresent()){
             var res = new PostResponse("Already subscribed in this tournament");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
         }
@@ -150,15 +159,17 @@ public class TournamentService {
                             !today.after(b.getEnrollment_deadline()),
                             b.getEnrollment_deadline(),
                             b.getGroups().size()
-                            )
+                    )
             );
         }
 
         TournamentGetResponse tournamentGetResponse = TournamentGetResponse.builder()
-                .battleInfo(battleInfos)
+                .is_open(tournament.is_open())
+                .creator(tournament.getEducator_creator())
+                .managers(tournament.getEducators().stream().map(TournamentManager::getUsername).toList())
+                .battles(battleInfos)
+                .leaderboard(tournament.getLeaderboard())
                 .build();
-
-        tournamentGetResponse.setRank(tournament.getRank_students());
 
         return new ResponseEntity<>(tournamentGetResponse, HttpStatus.ACCEPTED);
     }
@@ -182,27 +193,37 @@ public class TournamentService {
 
         for(Battle b : battles){
             if(!date.after(b.getSubmission_deadline())){
-                PostResponse postResponse = new PostResponse("Not all battle are closed");
+                PostResponse postResponse = new PostResponse("Not all battles are closed");
                 return ResponseEntity.badRequest().body(postResponse);
             }
         }
 
-        // Since there are no badges then the final score will be the sum
-        // of the evaluations and therefore the members of a group will have the same score
+        // remember a student can play in several battle
 
-        // So my hypothesis is that every time there is a push, the point of the group will be updated and also the personal
-
-        // if we had also to implement the badge, here I would compute and add the badge score for each subscribed
-
-        // notice every student in the group must be in the subscribed list but not the viceversa
-        // updateScores(tournament);
+        // here update badges, we don't have to implement them
+        // scoreService.updateScores(tournament);
 
         for(TournamentSubscriber u : tournament.getSubscribed_users()) {
-            Runnable taskSendEmail = () -> notificationService.notifyGlobalRanksAvailable(u.getEmail(), tournamentTitle);
+            Runnable taskSendEmail = () -> notificationService.sendGlobalRanksAvailable(u.getEmail(), tournamentTitle);
             executor.submit(taskSendEmail);
         }
 
         PostResponse postResponse = new PostResponse("OK");
         return ResponseEntity.ok().body(postResponse);
     }
+
+    public ResponseEntity<List<TournamentController.TournamentsListEntry>> getTournamentsList() {
+        var tournaments = tournamentRepository.findAll(); // not good for large scale requests
+        return ResponseEntity.ok(
+                tournaments.stream().map(t -> new TournamentController.TournamentsListEntry(
+                        t.getTitle(),
+                        t.is_open(),
+                        t.getSubscription_deadline(),
+                        t.getSubscribed_users().size(),
+                        t.getEducators().stream().map(TournamentManager::getUsername).toList()
+                )).toList()
+        );
+    }
+
+
 }

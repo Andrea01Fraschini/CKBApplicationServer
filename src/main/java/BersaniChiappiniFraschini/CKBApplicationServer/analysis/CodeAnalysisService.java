@@ -6,11 +6,13 @@ import BersaniChiappiniFraschini.CKBApplicationServer.ecaRunners.JavaECARunner;
 import BersaniChiappiniFraschini.CKBApplicationServer.testRunners.JavaTestRunner;
 import BersaniChiappiniFraschini.CKBApplicationServer.testRunners.TestRunner;
 import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Service
 @NoArgsConstructor
 public class CodeAnalysisService {
     private record LanguageAnalysisTools(ProjectBuilder projectBuilder, ECARunner ecaRunner, TestRunner testRunner){}

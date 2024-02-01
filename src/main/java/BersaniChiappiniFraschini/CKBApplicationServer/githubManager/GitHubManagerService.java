@@ -1,37 +1,22 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.githubManager;
 
-import BersaniChiappiniFraschini.CKBApplicationServer.authentication.AuthenticationService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mashape.unirest.http.HttpMethod;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
-import lombok.*;
-import org.antlr.v4.runtime.misc.Pair;
-import org.apache.commons.io.IOUtils;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.InvalidRemoteException;
-import org.eclipse.jgit.api.errors.TransportException;
-import org.eclipse.jgit.lib.ProgressMonitor;
-import org.eclipse.jgit.lib.TextProgressMonitor;
-import org.json.HTTP;
-import org.json.JSONObject;
 import org.kohsuke.github.*;
 import org.springframework.core.env.Environment;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
+import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 @Service
 @RequiredArgsConstructor
@@ -104,8 +89,6 @@ public class GitHubManagerService {
             localBranch.updateTo(commit.getSHA1());
 
             protectRepo(repo);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -145,23 +128,25 @@ public class GitHubManagerService {
 
     // DOWNLOAD FROM RESPOSITORY OF THE GROUP
     public String downloadRepo(String repo, String path){
-        try {
-            String githubRepoUrl = repo;
+        if(!repo.endsWith(".git")){
+            repo = repo + ".git";
+        }
 
+        try {
             File localRepoDir = new File(path);
 
             // Clone the repository
             Git.cloneRepository()
-                    .setURI(githubRepoUrl)
+                    .setURI(repo)
                     .setDirectory(localRepoDir)
-                    .call().close();
+                    .call()
+                    .close();
 
             return localRepoDir.getAbsolutePath();
         } catch (GitAPIException e) {
             e.printStackTrace();
+            return null;
         }
-
-        return null;
     }
 
     private void uploadDirectoryContents(File directory, String relativePath, GHTreeBuilder treeBuilder) throws Exception{

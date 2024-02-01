@@ -5,6 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/tournaments")
@@ -35,11 +38,24 @@ public class TournamentController {
         return tournamentService.getTournament(tournamentTitle);
     }
 
-    @PostMapping ("/closing")
+    @PostMapping ("/close")
     public ResponseEntity<PostResponse> closeTournament(
             @RequestParam String tournamentTitle
     ){
 
         return tournamentService.closeTournament(tournamentTitle);
     }
+
+    @GetMapping("/list")
+    public ResponseEntity<List<TournamentsListEntry>> getTournamentsList() {
+        return tournamentService.getTournamentsList();
+    }
+
+    public record TournamentsListEntry(
+            String title,
+            boolean is_open,
+            Date subscription_deadline,
+            int subscribed_students,
+            List<String> educators
+    ) {}
 }

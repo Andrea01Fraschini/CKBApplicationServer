@@ -71,7 +71,8 @@ class NotificationServiceTest {
                 .educators(List.of(
                         new TournamentManager(
                                 "Creator_id",
-                                "TournamentCreator"
+                                "TournamentCreator",
+                                "prova@gmail.com"
                         )))
                 .build();
 
