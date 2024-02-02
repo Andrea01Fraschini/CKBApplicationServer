@@ -86,7 +86,7 @@ public class ScoreService {
                 .and("battles._id").is(new ObjectId(battle_id))
                 .and("battles.groups._id").is(new ObjectId(group_id)));
 
-        int totalScore = 0;
+        int totalScore;
 
         Tournament result = mongoTemplate.findOne(query, Tournament.class, "tournament");
 
@@ -147,34 +147,7 @@ public class ScoreService {
             Runnable taskSendEmail = () -> notificationService.sendNewBattleRankAvailable(group, tournament.getTitle(), battle.getTitle());
             executor.submit(taskSendEmail);
         }
+
+        return;
     }
-
-    // POTRARE I PUNTI GRUPPO DOPO CLOSEBATTLE
-
-    /*
-    public void updateScores(Tournament tournament){
-        List<TournamentSubscriber> tournamentSubscriber = tournament.getSubscribed_users();
-
-
-        for(TournamentSubscriber ts : tournamentSubscriber){
-            int totalScorePersonal = 0;
-            for(Battle battle : tournament.getBattles()){
-                for(Group g : battle.getGroups()){
-                    int control = g.getMembers().stream().filter((m) -> m.getId().equals(ts.getId())).toList().size();
-                    if(control == 1) {
-                        totalScorePersonal += g.getTotal_score();
-                    }
-                }
-            }
-            ts.setScore(totalScorePersonal);
-        }
-
-        Query query = new Query(Criteria
-                .where("_id").is(new ObjectId(tournament.getId())));
-
-        var update = new Update()
-                .set("subscribed_users", tournamentSubscriber);
-
-        mongoTemplate.updateFirst(query, update, "tournament");
-    }*/
 }

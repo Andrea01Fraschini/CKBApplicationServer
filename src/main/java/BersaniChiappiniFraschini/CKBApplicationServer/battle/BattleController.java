@@ -16,9 +16,16 @@ public class BattleController {
 
     @PostMapping("/create")
     public ResponseEntity<PostResponse> createBattle(
-            @RequestBody BattleCreationRequest request
+            @RequestPart("request") BattleCreationRequest request,
+            @RequestPart("file") MultipartFile file
     ) {
-        return battleService.createBattle(request);
+        if (file.getContentType() != null && (file.getContentType().equals("application/zip") || file.getContentType().equals("application/x-zip-compressed"))){
+            request.setFile(file);
+            return battleService.createBattle(request);
+        } else {
+            PostResponse pos = new PostResponse("The file is not a zip");
+            return ResponseEntity.badRequest().body(pos);
+        }
     }
 
     @PostMapping("/enroll")
@@ -28,7 +35,7 @@ public class BattleController {
         return battleService.enrollGroup(request);
     }
 
-    //here the view of the battle in detail
+    // here the view of the battle in detail
     @GetMapping("/view")
     public ResponseEntity<Object> getBattle(
             @RequestParam String tournamentTitle,
@@ -36,6 +43,5 @@ public class BattleController {
     ) {
         return battleService.getBattleInfo(tournamentTitle, battleTitle);
     }
-
 
 }

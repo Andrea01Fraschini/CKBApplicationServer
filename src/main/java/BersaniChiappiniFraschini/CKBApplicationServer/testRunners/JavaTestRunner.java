@@ -39,7 +39,10 @@ public class JavaTestRunner implements TestRunner {
 
         var canonicalName = findCanonicalNameInJar(jarFilePath, className);
         // Load the class dynamically
-        return Class.forName(canonicalName, false, classLoader);
+
+        var aClass = Class.forName(canonicalName, true, classLoader);
+        classLoader.close();
+        return aClass;
     }
 
     private Map<String, TestStatus> runTests(Class<?> testClass) {
@@ -71,6 +74,7 @@ public class JavaTestRunner implements TestRunner {
         }
 
         for (var failure : summary.getFailures()) {
+            failure.getException().printStackTrace();
             results.put(failure.getTestIdentifier().getDisplayName(), TestStatus.FAILED);
         }
 

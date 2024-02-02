@@ -21,5 +21,7 @@ public class Invite { // Work In progress
     @Indexed
     private String receiver;
     private String tournament_id;
+    private String tournament_title; // tournament_id becomes redundant
+    private String battle_title;
     private String group_id;
 }

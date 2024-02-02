@@ -8,7 +8,4 @@ public record BattleInfo(
         boolean is_open,
         Date enrollment_deadline,
         int enrolled_groups
-
-){
-
-}
+){ }

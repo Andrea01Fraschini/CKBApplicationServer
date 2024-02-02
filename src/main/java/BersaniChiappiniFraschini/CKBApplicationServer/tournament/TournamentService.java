@@ -9,7 +9,6 @@ import BersaniChiappiniFraschini.CKBApplicationServer.search.BattleInfo;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.RequiredArgsConstructor;
-import org.eclipse.jgit.internal.storage.file.PackReverseIndex;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -39,7 +38,6 @@ public class TournamentService {
     private final MongoTemplate mongoTemplate;
     private final InviteService inviteService;
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
-
     private final ScoreService scoreService;
 
     public ResponseEntity<PostResponse> createTournament(TournamentCreationRequest request){
@@ -128,7 +126,7 @@ public class TournamentService {
         mongoTemplate.updateFirst(Query.query(criteria), update, "tournament");
 
         //send e-mail of the subscription
-        Runnable taskSendEmail = () -> notificationService.sendNotification(user.getEmail(), "You have successfully registered for the " + "'%s'".formatted(title) + " tournament");
+        Runnable taskSendEmail = () -> notificationService.sendSuccessfulTournamentSubscription(user, tournament);
         executor.submit(taskSendEmail);
 
         return ResponseEntity.ok(null);
@@ -156,12 +154,17 @@ public class TournamentService {
                     new BattleInfo(
                             tournamentTitle,
                             b.getTitle(),
-                            !today.after(b.getEnrollment_deadline()),
+                            !today.after(b.getSubmission_deadline()),
                             b.getEnrollment_deadline(),
                             b.getGroups().size()
                     )
             );
         }
+
+        // get user info
+        var context = SecurityContextHolder.getContext();
+        var auth = context.getAuthentication();
+        var username = auth.getName();
 
         TournamentGetResponse tournamentGetResponse = TournamentGetResponse.builder()
                 .is_open(tournament.is_open())
@@ -169,6 +172,9 @@ public class TournamentService {
                 .managers(tournament.getEducators().stream().map(TournamentManager::getUsername).toList())
                 .battles(battleInfos)
                 .leaderboard(tournament.getLeaderboard())
+                .already_subscribed(tournament.getSubscribed_users()
+                        .stream()
+                        .anyMatch(subscriber -> subscriber.getUsername().equals(username)))
                 .build();
 
         return new ResponseEntity<>(tournamentGetResponse, HttpStatus.ACCEPTED);
@@ -185,11 +191,10 @@ public class TournamentService {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
         }
 
-        //control all battles are closed
+        // check if all battles are closed
         Tournament tournament = tournamentRepository.findTournamentByTitle(tournamentTitle);
         List<Battle> battles = tournament.getBattles();
         Date date = new Date();
-
 
         for(Battle b : battles){
             if(!date.after(b.getSubmission_deadline())){
@@ -201,15 +206,19 @@ public class TournamentService {
         // remember a student can play in several battle
 
         // here update badges, we don't have to implement them
-        // scoreService.updateScores(tournament);
+        // TODO: scoreService.updateScores(tournament);
 
         for(TournamentSubscriber u : tournament.getSubscribed_users()) {
             Runnable taskSendEmail = () -> notificationService.sendGlobalRanksAvailable(u.getEmail(), tournamentTitle);
             executor.submit(taskSendEmail);
         }
 
-        PostResponse postResponse = new PostResponse("OK");
-        return ResponseEntity.ok().body(postResponse);
+        // Update in database
+        var criteria = Criteria.where("title").is(tournamentTitle);
+        var update = new Update().set("is_open", false);
+        mongoTemplate.updateFirst(Query.query(criteria), update, Tournament.class);
+
+        return ResponseEntity.ok().body(null);
     }
 
     public ResponseEntity<List<TournamentController.TournamentsListEntry>> getTournamentsList() {

@@ -1,6 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.authentication.AuthenticationService;
+import BersaniChiappiniFraschini.CKBApplicationServer.config.JwtService;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.TimedEvent;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
@@ -12,10 +13,13 @@ import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.scores.ScoreService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.*;
+import BersaniChiappiniFraschini.CKBApplicationServer.uploadFile.FilesStorageService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.*;
 import org.bson.types.ObjectId;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
@@ -29,8 +33,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Service
@@ -42,7 +50,7 @@ public class BattleService {
     private final NotificationService notificationService;
     private final UserDetailsService userDetailsService;
     private final InviteService inviteService;
-
+    private final JwtService jwtService;
     private final ScoreService scoreService;
 
     private final AuthenticationService authenticationService;
@@ -101,11 +109,14 @@ public class BattleService {
 
         // add the repository for the battle
 
-        // TODO: re-add (it currently crashes)
-        // String repository = gitHubManagerService.createRepository(tournament.getTitle(), battle_title, description);
-        String repository = "tempRepo";
-
-        // TODO: upload the file of the project
+        // upload the file of the project
+        String repo = "";
+        try {
+            repo = gitHubManagerService.createRepository(tournament_title, battle_title, description);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new PostResponse("GitHub wasn't able to create the repo, try again"));
+        }
+        // Future<String> repository = gitHubManagerService.saveFileAndCreateRepository(request.getFile(), tournament_title, battle_title, description);
 
         // Create new battle
         Battle battle = Battle.builder()
@@ -119,7 +130,7 @@ public class BattleService {
                 .evaluation_parameters(eval_parameters)
                 .manual_evaluation(manual_evaluation)
                 .groups(List.of())
-                .repository(repository)
+                .repository(repo)
                 .project_language(project_language)
                 .tests_file_name(tests_file)
                 .build();
@@ -142,6 +153,11 @@ public class BattleService {
         // Notify subscribed students
         Runnable taskSendEmail = () -> notificationService.sendBattleCreationNotification(battle, tournament);
         executor.submit(taskSendEmail);
+
+        // upload File
+        String finalRepo = repo;
+        Runnable taskUploadFileToGithub = () -> gitHubManagerService.saveFileAndCreateRepository(request.getFile(), battle_title, finalRepo);
+        executor.submit(taskUploadFileToGithub);
 
         return ResponseEntity.ok(null);
     }
@@ -209,9 +225,8 @@ public class BattleService {
 
         String id = ObjectId.get().toString();
         //TODO: to manage error
-        String token = authenticationService.generateToken(id);
-
-        //TODO: how to get the file of the project?
+        String token = jwtService.generateJWT(id);
+//        String token = authenticationService.generateToken(id);
 
         // Create group
         Group group = Group.builder()
@@ -219,7 +234,7 @@ public class BattleService {
                 .leader(new GroupMember(student))
                 .members(List.of(new GroupMember(student)))
                 .pending_invites(invites.stream().map(PendingInvite::new).toList())
-                // TODO: The repository of the group to do the download (fork)
+                // The repository of the group to do the download (fork)
                 .repository("")
                 .API_Token(token)
                 .done_manual_evaluation(false)
@@ -239,7 +254,7 @@ public class BattleService {
         mongoTemplate.updateFirst(Query.query(criteria), update, "tournament");
 
         //send notification of registration to the battle
-        Runnable taskSendEmail = () -> notificationService.sendNotification(student.getEmail(), "You have successfully enrolled in the " + "'%s'".formatted(battle.getTitle()) + " battle");
+        Runnable taskSendEmail = () -> notificationService.sendSuccessfulBattleEnrollment(student, battle);
         executor.submit(taskSendEmail);
 
         return ResponseEntity.ok(null);
@@ -324,7 +339,7 @@ public class BattleService {
             // Condizione per rimuovere l'elemento
             if (group.getMembers().size() < battle.getMin_group_size() || group.getMembers().size() > battle.getMax_group_size()) {
 
-                Runnable taskSendEmail = () -> notificationService.sendEliminationGroup(group, battle);
+                Runnable taskSendEmail = () -> notificationService.sendGroupRemovedFromBattle(group, battle);
                 executor.submit(taskSendEmail);
 
                 iterator.remove();

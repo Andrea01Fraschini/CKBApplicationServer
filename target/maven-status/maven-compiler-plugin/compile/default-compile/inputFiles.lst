@@ -14,6 +14,7 @@ C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFrasch
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\group\ManagersService.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\event\EventService.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\battle\Battle.java
+C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\notification\NotificationType.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\battle\BattleEnrollmentRequest.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\invite\ManagerInviteRequest.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\group\ManualEvaluationRequest.java
@@ -23,6 +24,7 @@ C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFrasch
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\user\UserRepository.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\tournament\TournamentService.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\notification\NotificationDetails.java
+C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\uploadFile\FilesStorageService.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\analysis\EvaluationResult.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\invite\InviteStatusUpdateRequest.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\search\TournamentInfo.java
@@ -71,6 +73,7 @@ C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFrasch
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\authentication\AuthenticationResponse.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\githubManager\GitHubController.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\githubManager\PushActionService.java
+C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\group\SetGroupRepositoryRequest.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\user\UserController.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\analysis\CodeAnalysisService.java
 C:\Users\andre\Desktop\CKBApplicationServer\src\main\java\BersaniChiappiniFraschini\CKBApplicationServer\tournament\TournamentController.java

@@ -1,8 +1,10 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.List;
@@ -22,5 +24,7 @@ public class BattleCreationRequest {
     private List<EvalParameter> evaluation_parameters;
     private String project_language;
     private String tests_file_name;
-    // TODO: add files ?
+
+    private MultipartFile file;
+
 }

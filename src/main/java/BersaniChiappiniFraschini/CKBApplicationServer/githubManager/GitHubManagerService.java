@@ -1,20 +1,22 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.githubManager;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import BersaniChiappiniFraschini.CKBApplicationServer.uploadFile.FilesStorageService;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.kohsuke.github.*;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.Resource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Date;
-import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,14 +29,14 @@ public class GitHubManagerService {
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     // Create Repository for the battle
-    public String createRepository(String tournamentTitle, String battleTitle, String description){
+    public String createRepository(String tournamentTitle, String battleTitle, String description) throws Exception {
 
         String githubToken = environment.getProperty("github.token");
         String owner = environment.getProperty("github.repo.owner");
 
         try {
             GitHub github = new GitHubBuilder().withOAuthToken(githubToken).build();
-            // Creazione della nuova repository
+            // Creation of new repository
             GHCreateRepositoryBuilder createRepositoryBuilder = github
                     .createRepository(tournamentTitle+"-"+battleTitle)
                     .autoInit(true)
@@ -44,18 +46,16 @@ public class GitHubManagerService {
                     .private_(false)
                     .description(description);
 
-            // Esecuzione effettiva della creazione
             GHRepository newRepository = createRepositoryBuilder.create();
-            System.out.println("Nuova repository creata: " + newRepository.getHtmlUrl());
 
             return newRepository.getHtmlUrl().toString();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new Exception(e);
         }
     }
 
     // Upload the code of the battle
-    public boolean setCodeRepository(String repo, String pathFile, String battleTitle){
+    public boolean setCodeRepository(String repo, String pathFile) throws Exception {
         String githubToken = environment.getProperty("github.token");
         String owner = environment.getProperty("github.repo.owner");
 
@@ -72,7 +72,7 @@ public class GitHubManagerService {
             GHTreeBuilder treeBuilder = repository.createTree();
             treeBuilder.baseTree(baseTreeSha);
             // build the tree with the files
-            uploadDirectoryContents(new File(pathFile), battleTitle, treeBuilder);
+            uploadDirectoryContents(new File(pathFile), "project", treeBuilder);
 
             // Crea un nuovo albero
             GHTree tree = treeBuilder.create();
@@ -89,8 +89,10 @@ public class GitHubManagerService {
             localBranch.updateTo(commit.getSHA1());
 
             protectRepo(repo);
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new Exception(e.getMessage());
         }
 
         return true;
@@ -155,8 +157,6 @@ public class GitHubManagerService {
                 continue;
             }else if (file.isFile()) {
 
-                System.out.println(file.toURI());
-
                 byte[] fileRead = Files.readAllBytes(file.toPath());
 
                 treeBuilder = treeBuilder.add(relativePath + "/" + file.getName(), fileRead, false);
@@ -167,12 +167,38 @@ public class GitHubManagerService {
         }
     }
 
-    @Builder
-    @Data
-    @AllArgsConstructor
-    static class ResponseRequest{
-        int code;
-        Map body;
+    @Async
+    public CompletableFuture<String> saveFileAndCreateRepository(MultipartFile file, String battleTitle, String repo) {
+
+        FilesStorageService filesStorageService = new FilesStorageService();
+        String clearBattleName = battleTitle.replace(' ', '_');
+        filesStorageService.init(clearBattleName);
+
+
+        try {
+            filesStorageService.save(file);
+            String name = file.getOriginalFilename();
+
+            if(name == null || name.equals("")){
+                filesStorageService.deleteAll();
+                return CompletableFuture.failedFuture(new Throwable("No name of the file"));
+            }
+
+            Resource resource = filesStorageService.load(name);
+
+            File file1 = resource.getFile();
+            InputStream i = file1.toURI().toURL().openStream();
+            filesStorageService.unzip(i, clearBattleName);
+            String path = filesStorageService.pathToGitHub();
+
+            setCodeRepository(repo, path);
+            protectRepo(repo);
+            filesStorageService.deleteAll();
+            return CompletableFuture.completedFuture(repo);
+        } catch (Exception e) {
+            filesStorageService.deleteAll();
+            return CompletableFuture.failedFuture(new Throwable(e.getMessage()));
+        }
     }
 
 }

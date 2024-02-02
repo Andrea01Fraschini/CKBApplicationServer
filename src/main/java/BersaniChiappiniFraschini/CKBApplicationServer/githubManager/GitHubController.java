@@ -16,6 +16,7 @@ public class GitHubController {
     private final GitHubManagerService gitHubManagerService;
     private final PushActionService pushActionService;
 
+    /*
     // for test
     @GetMapping("/create")
     public String register(
@@ -24,17 +25,17 @@ public class GitHubController {
             @RequestParam String description
     ){
         return gitHubManagerService.createRepository(tournamentTitle, battleTitle, description);
-    }
+    }*/
 
+    /*
     // for test
     @GetMapping("/upload")
     public boolean createCode(
             @RequestParam String repository,
-            @RequestParam String battleTitle,
             @RequestParam String pathFile
     ){
-        return gitHubManagerService.setCodeRepository(repository, pathFile, battleTitle);
-    }
+        return gitHubManagerService.setCodeRepository(repository, pathFile);
+    }*/
 
     @PostMapping("/push")
     public ResponseEntity<String> pushActionPerformed(

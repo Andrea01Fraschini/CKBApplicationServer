@@ -1,20 +1,15 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.search;
 
 
-import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
+import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentController;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentManager;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -29,37 +26,34 @@ public class SearchService {
 
     private final TournamentRepository tournamentRepository;
     private final UserRepository userRepository ;
-    private final MongoTemplate mongoTemplate;
 
-    public List<TournamentInfo> searchTournament(String tournamentTitle){
+    public List<TournamentController.TournamentsListEntry> searchTournament(String tournamentTitle){
         Collection<Tournament> tournaments = tournamentRepository.findByTitleSearch(tournamentTitle);
         return buildTournamentsInfo(tournaments);
     }
 
-    public List<BattleInfo> searchBattle(String battleTitle){
+    public List<BattleInfo> searchBattle(String tournamentTitle, String battleTitle){
+        var tournament = tournamentRepository.findTournamentByTitle(tournamentTitle);
 
-        AggregationOperation unwind = Aggregation.unwind("battles");
-        AggregationOperation match = Aggregation.match(
-                Criteria.where("battles.title").regex(battleTitle) // "i" per rendere la ricerca case-insensitive
-        );
+        var pattern = Pattern.compile("(?i).*%s.*".formatted(battleTitle));
+        var results = tournament.getBattles()
+                .stream()
+                .filter(battle -> {
+                    Matcher matcher = pattern.matcher(battle.getTitle());
+                    return matcher.matches();
+                }).toList();
 
-        AggregationOperation project1 = Aggregation.project("title","battles").and("title").as("tournamentTitle");
-        AggregationOperation project2 = Aggregation.project("tournamentTitle", "battles.title", "battles.enrollment_deadline","battles.groups");
-        Aggregation aggregation = Aggregation.newAggregation(unwind, match, project1, project2);
-
-        AggregationResults<SupportClassBattleInfo> results = mongoTemplate.aggregate(aggregation, "tournament", SupportClassBattleInfo.class);
-
-        return buildBattlesInfo(results);
+        return buildBattlesInfo(results, tournamentTitle);
     }
 
-    private List<BattleInfo> buildBattlesInfo(AggregationResults<SupportClassBattleInfo> results){
+    private List<BattleInfo> buildBattlesInfo(List<Battle> results, String tournamentTitle){
 
         List<BattleInfo> battlesInfo = new ArrayList<>();
         Date today = new Date();
 
         for(var b : results){
             battlesInfo.add(new BattleInfo(
-                    b.getTournamentTitle(),
+                    tournamentTitle,
                     b.getTitle(),
                     !today.after(b.getEnrollment_deadline()),
                     b.getEnrollment_deadline(),
@@ -70,24 +64,20 @@ public class SearchService {
         return battlesInfo;
     }
 
-    private List<TournamentInfo> buildTournamentsInfo(Collection<Tournament> tournaments){
-        List<TournamentInfo> tournamentInfos = new ArrayList<>();
+    private List<TournamentController.TournamentsListEntry> buildTournamentsInfo(Collection<Tournament> tournaments){
+        List<TournamentController.TournamentsListEntry> tournamentsListEntries = new ArrayList<>();
 
         for(var t : tournaments){
-            tournamentInfos.add(new TournamentInfo(
+            tournamentsListEntries.add(new TournamentController.TournamentsListEntry(
                     t.getTitle(),
-                    t.getSubscribed_users().size(),
-                    t.getBattles().size(),
+                    t.is_open(),
                     t.getSubscription_deadline(),
-                    t.getEducators()
-                            .stream()
-                            .map(e -> new TournamentInfo.Educator(e.getUsername()))
-                            .toList(),
-                    t.is_open()
+                    t.getSubscribed_users().size(),
+                    t.getEducators().stream().map(TournamentManager::getUsername).toList()
             ));
         }
 
-        return tournamentInfos;
+        return tournamentsListEntries;
     }
 
     public List<String> searchUser(String username){
@@ -98,12 +88,4 @@ public class SearchService {
         return users.stream().map(User::getUsername).toList();
     }
 
-    @Data
-    @AllArgsConstructor
-    private static class SupportClassBattleInfo {
-        private String tournamentTitle;
-        private String title;
-        private Date enrollment_deadline;
-        private List<Group> groups;
-    }
 }

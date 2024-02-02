@@ -1,6 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.authentication.AuthenticationService;
+import BersaniChiappiniFraschini.CKBApplicationServer.config.JwtService;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.githubManager.GitHubManagerService;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
@@ -21,9 +22,13 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +36,8 @@ import static org.mockito.Mockito.when;
 class BattleServiceTest {
     @Mock
     private TournamentRepository tournamentRepository;
+    @Mock
+    private JwtService jwtService;
     @Mock
     private MongoTemplate mongoTemplate;
     @Mock
@@ -51,7 +58,8 @@ class BattleServiceTest {
     private BattleService battleService;
 
     @BeforeEach
-    public void setup(){
+    public void setup() throws Exception {
+
         when(userDetailsService.loadUserByUsername(anyString()))
                 .thenReturn(User.builder()
                         .id("FFFFFF0123451989BBBBBB99")
@@ -79,12 +87,20 @@ class BattleServiceTest {
                                 .max_group_size(3)
                                 .title("Battle title")
                                 .build()))
+                        .subscribed_users(List.of(TournamentSubscriber.builder()
+                                .username("I'm a student")
+                                .build(), TournamentSubscriber.builder()
+                                        .username("I'm a subscriber")
+                                        .build()))
                         .build());
+
+        when(gitHubManagerService.saveFileAndCreateRepository(any(), any(), any()))
+                .thenReturn(CompletableFuture.completedFuture("repo"));
     }
 
     @Test
     @WithMockUser(username = "Tyler the creator", authorities = { "EDUCATOR" })
-    public void shouldCreateBattle(){
+    public void shouldCreateBattle() {
 
 
         BattleCreationRequest request = new BattleCreationRequest(
@@ -98,7 +114,8 @@ class BattleServiceTest {
                 false,
                 List.of(),
                 "java",
-                "test_file_name"
+                "test_file_name",
+                null
         );
 
         var response = battleService.createBattle(request);
@@ -108,7 +125,7 @@ class BattleServiceTest {
 
     @Test
     @WithMockUser(username = "Tyler the creator", authorities = { "EDUCATOR" })
-    public void shouldNotCreateDuplicateBattle(){
+    public void shouldNotCreateDuplicateBattle() {
 
         BattleCreationRequest request = new BattleCreationRequest(
                 "Tournament title",
@@ -121,7 +138,8 @@ class BattleServiceTest {
                 false,
                 List.of(),
                 "java",
-                "test_file_name"
+                "test_file_name".toLowerCase(),
+                null
         );
 
         var response = battleService.createBattle(request);
@@ -134,7 +152,7 @@ class BattleServiceTest {
 
     @Test
     @WithMockUser(username = "I'm not a manager of the tournament", authorities = { "EDUCATOR" })
-    public void shouldNotCreateBattleIfNotAManager(){
+    public void shouldNotCreateBattleIfNotAManager()  {
         BattleCreationRequest request = new BattleCreationRequest(
                 "Tournament title",
                 "New Battle title",
@@ -146,8 +164,10 @@ class BattleServiceTest {
                 false,
                 List.of(),
                 "java",
-                "test_file_name"
+                "test_file_name",
+                null
         );
+
 
         var response = battleService.createBattle(request);
 
@@ -157,6 +177,7 @@ class BattleServiceTest {
     @Test
     @WithMockUser(username = "I'm not an educator", authorities = { "STUDENT" })
     public void shouldNotCreateBattleAsStudent(){
+
         var response = battleService.createBattle(new BattleCreationRequest());
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
@@ -229,6 +250,11 @@ class BattleServiceTest {
                                 .max_group_size(3)
                                 .title("Battle title")
                                 .build()))
+                        .subscribed_users(List.of(TournamentSubscriber.builder()
+                                .username("I'm a student")
+                                .build(), TournamentSubscriber.builder()
+                                .username("I'm a subscriber")
+                                .build()))
                         .build());
 
         BattleEnrollmentRequest request = new BattleEnrollmentRequest(
@@ -265,6 +291,11 @@ class BattleServiceTest {
                                 .min_group_size(1)
                                 .max_group_size(2)
                                 .title("Battle title")
+                                .build()))
+                        .subscribed_users(List.of(TournamentSubscriber.builder()
+                                .username("I'm a student")
+                                .build(), TournamentSubscriber.builder()
+                                .username("I'm a subscriber")
                                 .build()))
                         .build());
 

@@ -1,8 +1,10 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.dashboard;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
+import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationDetails;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
+import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -23,13 +25,17 @@ import java.util.*;
 @RequiredArgsConstructor
 public class DashboardService {
     private final TournamentRepository tournamentRepository;
+    private final UserRepository userRepository;
 
     private final MongoTemplate mongoTemplate;
     public DashboardResponse getDashboard() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
         String username = auth.getName();
-        //Prendi le notifiche
+
+        // Fetch user notifications
+        var user = userRepository.findUserByUsername(username).get();
+        var notifications = user.getNotifications();
 
         List<CardInfo> cards = new ArrayList<>();
         switch (accountType) {
@@ -89,9 +95,16 @@ public class DashboardService {
             }
         }
 
+        if (notifications == null) notifications = List.of();
+
         return DashboardResponse.builder()
                 .account_type(accountType.name())
-                .notifications(null)
+                .notifications(notifications.stream()
+                        .map(notification -> new NotificationDetails(
+                                notification.getId(),
+                                notification.getMessage(),
+                                notification.getType()
+                        )).toList())
                 .cards(cards)
                 .build();
     }

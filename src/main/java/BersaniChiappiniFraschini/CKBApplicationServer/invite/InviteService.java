@@ -24,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -50,6 +51,13 @@ public class InviteService {
         var sender_username = auth.getName();
         var sender = (User) userDetailsService.loadUserByUsername(sender_username);
         var receiver = (User) userDetailsService.loadUserByUsername(request.getUsername());
+
+        // Check that user is not trying to invite themselves
+        if (sender.getUsername().equals(receiver.getUsername())) {
+            var res = new PostResponse("You cannot invite yourself");
+            return ResponseEntity.badRequest().body(res);
+        }
+
         var tournament = tournamentRepository.findTournamentByTitle(request.getTournament_title());
 
         sendManagerInvite(sender, receiver, tournament);
@@ -64,6 +72,7 @@ public class InviteService {
                 .receiver(receiver.getUsername())
                 .group_id(null)
                 .tournament_id(tournament.getId()) // used to facilitate updating
+                .tournament_title(tournament.getTitle()) // name and id are both unique, title is more useful for frontend
                 .build();
 
         userService.addInvite(invite);
@@ -84,6 +93,13 @@ public class InviteService {
         var sender_username = auth.getName();
         var sender = (User) userDetailsService.loadUserByUsername(sender_username);
         var receiver = (User) userDetailsService.loadUserByUsername(request.getUsername());
+
+        // Check that user is not trying to invite themselves
+        if (sender.getUsername().equals(receiver.getUsername())) {
+            var res = new PostResponse("You cannot invite yourself");
+            return ResponseEntity.badRequest().body(res);
+        }
+
         var tournament = tournamentRepository.findTournamentByTitle(request.getTournament_title());
         var battle = tournament.getBattles()
                 .stream()
@@ -118,6 +134,8 @@ public class InviteService {
                 .receiver(receiver.getUsername())
                 .group_id(group.getId())
                 .tournament_id(tournament.getId()) // used to facilitate updating
+                .tournament_title(tournament.getTitle()) // name and id are both unique, title is more useful for frontend
+                .battle_title(battle.getTitle())
                 .build();
 
         userService.addInvite(invite);
@@ -179,4 +197,25 @@ public class InviteService {
             managersService.rejectManagerInvite(invite.getTournament_id(), user);
         }
     }
+
+    public ResponseEntity<List<InviteController.InviteCard>> getUserInviteCards() {
+        // Get user data
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        var user = (User) userDetailsService.loadUserByUsername(auth.getName());
+
+        var invites = user.getInvites();
+
+        return ResponseEntity.ok(
+                invites.stream()
+                        .map(invite -> new InviteController.InviteCard(
+                                invite.getId(),
+                                invite.getSender(),
+                                invite.getTournament_id(),
+                                invite.getTournament_title(),
+                                invite.getBattle_title()
+                        ))
+                        .toList()
+        );
+    }
+
 }

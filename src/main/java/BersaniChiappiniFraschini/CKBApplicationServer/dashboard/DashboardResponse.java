@@ -14,6 +14,8 @@ import java.util.List;
 @NoArgsConstructor
 public class DashboardResponse {
     private String account_type;
-    private List<NotificationDetails> notifications;
-    private List<CardInfo> cards;
+    @Builder.Default
+    private List<NotificationDetails> notifications = List.of();
+    @Builder.Default
+    private List<CardInfo> cards = List.of();
 }

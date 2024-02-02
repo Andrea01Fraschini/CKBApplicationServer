@@ -15,17 +15,18 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @RequiredArgsConstructor
 public class PushActionService {
     private final JwtService jwtService;
-    private final BattleService battleService;
     private final CodeAnalysisService codeAnalysisService;
     private final GitHubManagerService gitHubManagerService;
+    private final BattleService battleService;
+    private static final AtomicInteger counter = new AtomicInteger(0);
 
     public ResponseEntity<String> fetchAndTestCode(String authorization) {
         if(authorization.isEmpty()){
@@ -37,8 +38,12 @@ public class PushActionService {
 
         Battle battle = battleService.getBattleFromGroupId(group_id);
 
+        if(jwtService.isExpired(token)){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Expired API token");
+        }
+
         if(battle == null){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Group not found");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Group not found");
         }
 
         var foundGroups = battle.getGroups().stream()
@@ -57,32 +62,27 @@ public class PushActionService {
         }
 
         Runnable task = () -> fetchTestAndUpdate(battle, group);
-        task.run();
+        new Thread(task).start();
 
-        return ResponseEntity.ok("Push correctly received!");
+        return ResponseEntity.ok("ok");
     }
 
     private void fetchTestAndUpdate(Battle battle, Group group){
+        int index = counter.getAndIncrement();
+        String dirName = "./repos_%d".formatted(index);
 
         // Fetch
-        gitHubManagerService.downloadRepo(group.getRepository(), "./repos/");
+        gitHubManagerService.downloadRepo(group.getRepository(), dirName+"/");
         String testFileName = battle.getTests_file_name();
         String language = battle.getProject_language();
 
+
         try{
-            try(var file = new FileInputStream("./repos/message.txt")){
-                String filecontents = new String(file.readAllBytes());
-                System.out.println(filecontents+"\n"+"Test file name: %s\nLanguage: %s".formatted(testFileName, language));
+            try(var file = new FileInputStream(dirName+"/message.txt")){
+                //Just for debug
+                System.out.println(new String(file.readAllBytes()));
             }
-
-
-
-        }catch (Exception e){
-            throw new RuntimeException(e);
-        }
-
-
-            /*
+        }catch (Exception ignored){}
 
         // Test
         var evaluationParams = List.of(
@@ -92,25 +92,25 @@ public class PushActionService {
         );
 
         EvaluationResult results;
-
         try {
             results = codeAnalysisService.launchAutomatedAssessment(
-                    "./repos/",
+                    dirName,
                     testFileName,
                     evaluationParams,
                     language);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            // Clean
+            deleteDirectory(new File(dirName));
         }
-*/
-        // Clean
-        deleteDirectory(new File("./repos"));
+        System.out.println(results.toString());
+
 
 
         // Update
+
     }
-
-
 
     private static void deleteDirectory(File file) {
         File[] children = file.listFiles();

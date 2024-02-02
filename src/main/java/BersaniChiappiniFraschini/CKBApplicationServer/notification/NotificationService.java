@@ -3,7 +3,6 @@ package BersaniChiappiniFraschini.CKBApplicationServer.notification;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentManager;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserService;
@@ -35,7 +34,7 @@ public class NotificationService {
 
 
         for(var email : userRepository.getAllStudentsEmails()){
-            sendNotification(email.getEmail(), message);
+            sendNotification(email.getEmail(), message, NotificationType.NEW_TOURNAMENT);
         }
     }
 
@@ -49,7 +48,7 @@ public class NotificationService {
                 .formatted(battle.getTitle(), tournament.getTitle());
 
         for (var user : tournament.getSubscribed_users()) {
-            sendNotification(user.getEmail(), message);
+            sendNotification(user.getEmail(), message, NotificationType.NEW_BATTLE);
         }
     }
 
@@ -57,14 +56,14 @@ public class NotificationService {
         String message = "You received an invite from %s"
                 .formatted(sender.getUsername());
 
-        sendNotification(receiver.getEmail(), message);
+        sendNotification(receiver.getEmail(), message, NotificationType.NEW_INVITE);
     }
 
     public void sendInviteStatusUpdate(User sender, boolean accepted) {
         String message = "%s has %s your invite"
                 .formatted(sender.getUsername(), accepted ? "accepted" : "rejected");
 
-        sendNotification(sender.getEmail(), message);
+        sendNotification(sender.getEmail(), message, NotificationType.INVITE_STATUS_UPDATE);
     }
 
     public void sendRepositoryInvites(Group group, Battle battle, String APIToken) {
@@ -72,17 +71,17 @@ public class NotificationService {
                 .formatted(battle.getTitle(), battle.getRepository(), APIToken);
 
         for (var member : group.getMembers()) {
-            sendNotification(member.getEmail(), message);
+            sendNotification(member.getEmail(), message, NotificationType.NEW_REPOSITORY_INVITE);
         }
     }
 
-    public void sendEliminationGroup(Group group, Battle battle) {
+    public void sendGroupRemovedFromBattle(Group group, Battle battle) {
         var message = "\n" +
-                "Your group has been eliminated from the battle '%s' because the number of participants does not meet the number required in the battle"
+                "Your group has been removed from the battle '%s' because the number of participants does not meet the battle requirements"
                 .formatted(battle.getTitle());
 
         for (var member : group.getMembers()) {
-            sendNotification(member.getEmail(), message);
+            sendNotification(member.getEmail(), message, NotificationType.GROUP_REMOVED_FROM_BATTLE);
         }
     }
 
@@ -92,9 +91,8 @@ public class NotificationService {
                         .formatted(battleTitle, tournamentTitle);
 
         for (var member : group.getMembers()) {
-            sendNotification(member.getEmail(), message);
+            sendNotification(member.getEmail(), message, NotificationType.NEW_RANK_AVAILABLE);
         }
-
     }
 
 
@@ -103,8 +101,19 @@ public class NotificationService {
         var message = "\n" +
                 "Final ranking of the tournament '%s' now available, hurry and see it!!!"
                         .formatted(tournamentTitle);
-        sendNotification(email, message);
+        sendNotification(email, message, NotificationType.NEW_RANK_AVAILABLE);
+    }
 
+    public void sendSuccessfulBattleEnrollment(User subscriber, Battle battle) {
+        var message = "You have successfully enrolled in the '%s' battle".formatted(battle.getTitle());
+        var email = subscriber.getEmail();
+        sendNotification(email, message, NotificationType.SUCCESSFUL_BATTLE_ENROLLMENT);
+    }
+
+    public void sendSuccessfulTournamentSubscription(User subscriber, Tournament tournament) {
+        var message = "You have successfully subscribed to the '%s' tournament. You will receive notifications of upcoming battles!".formatted(tournament.getTitle());
+        var email = subscriber.getEmail();
+        sendNotification(email, message, NotificationType.SUCCESSFUL_TOURNAMENT_SUBSCRIPTION);
     }
 
     public void sendManualEvaluationRequired(Tournament tournament, String battleTitle) {
@@ -113,9 +122,8 @@ public class NotificationService {
                         .formatted(tournament.getTitle(), battleTitle);
 
         for (var manager : tournament.getEducators()) {
-            sendNotification(manager.getEmail(), message);
+            sendNotification(manager.getEmail(), message, NotificationType.MANUAL_EVALUATION_REQUIRED);
         }
-
     }
 
     /**
@@ -123,9 +131,10 @@ public class NotificationService {
      * @param user_email User email used for identification and for sending an email
      * @param message body of the notification
      */
-    public void sendNotification(String user_email, String message){
+    public void sendNotification(String user_email, String message, NotificationType type){
         var notification = Notification.builder()
                 .id(ObjectId.get().toString())
+                .type(type)
                 .message(message)
                 .is_closed(false)
                 .creation_date(new Date(System.currentTimeMillis()))

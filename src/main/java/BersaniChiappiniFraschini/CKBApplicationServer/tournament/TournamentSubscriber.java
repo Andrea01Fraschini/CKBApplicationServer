@@ -2,6 +2,7 @@ package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -13,6 +14,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
+@Builder
 public class TournamentSubscriber {
     private String id;
     private String username;

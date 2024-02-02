@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 public class NotificationDetails { // Used for responses
     private String id;
     private String message;
-    private String type;
-    private String context;
+    private NotificationType type;
+    // private String context;
 }

@@ -16,6 +16,7 @@ public class Notification {
     @Id
     private String id;
     private String message;
+    private NotificationType type;
     private Date creation_date;
     private boolean is_closed;
     //private Invite invite; // Maybe it's not necessary

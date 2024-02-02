@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 public class JavaProjectBuilder implements ProjectBuilder {
     @Override
     public String buildProject(String projectDirectory) throws Exception {
-        return buildProject(projectDirectory, false);
+        return buildProject(projectDirectory, true);
     }
 
     @Override
@@ -17,8 +17,7 @@ public class JavaProjectBuilder implements ProjectBuilder {
         // Build the command to run the build script
         var directory = new File(projectDirectory);
         ProcessBuilder processBuilder = new ProcessBuilder("bash", "build.sh");
-        processBuilder.directory(directory.getParentFile());
-
+        processBuilder.directory(directory); // look for build script in the project directory
         // Redirect the process output to the console
         processBuilder.redirectErrorStream(true);
 
@@ -40,7 +39,8 @@ public class JavaProjectBuilder implements ProjectBuilder {
     }
 
     private String getJarPath(String projectPath) throws Exception {
-        String[] command = {"sh", "-c", "find %s -name *.jar".formatted(projectPath)};
+        // I'm not sure if changing sh to bash is a problem. It works both on windows and wsl Ubuntu
+        String[] command = {"bash", "-c", "find %s -name *.jar".formatted(projectPath)};
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         // Redirect error stream to output stream
