@@ -429,11 +429,7 @@ public class BattleService {
         List<LeaderboardEntry> battleLeaderboard = new ArrayList<>();
         // Compute the scores of each group in the battle
         for (Group g : groups) {
-            int group_score = g.getScoringParameters()
-                    .stream()
-                    .map(Group.ScoringParameter::score)
-                    .mapToInt(Integer::intValue)
-                    .sum();
+            int group_score = g.getTotal_score();
             battleLeaderboard.add(new LeaderboardEntry(g.getLeader().getUsername(), group_score));
         }
 

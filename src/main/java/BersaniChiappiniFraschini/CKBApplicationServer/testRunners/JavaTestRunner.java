@@ -38,18 +38,17 @@ public class JavaTestRunner implements TestRunner {
 
         // Convert the JAR file path to URL with the "file" protocol
         URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()});
-        System.out.println("JARFILEPATH: "+jarFilePath);
+        System.out.println("JARFILEPATH: " + jarFilePath);
         var canonicalName = findCanonicalNameInJar(jarFilePath, className);
-        System.out.println("CANONICALNAME: "+canonicalName);
         // Load the class dynamically
         var aClass = Class.forName(canonicalName, true, classLoader);
+        System.out.println("TEST CLASS: " + aClass);
         classLoader.close();
         return aClass;
     }
 
     private Map<String, TestStatus> runTests(Class<?> testClass) {
         Map<String, TestStatus> results = new HashMap<>();
-        System.out.println("TEST CLASS NAME: "+testClass.getName());
 
         LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
                 .selectors(DiscoverySelectors.selectClass(testClass))

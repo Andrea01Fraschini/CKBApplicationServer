@@ -60,11 +60,7 @@ public class DashboardService {
                             //battle_title
                             t.getTitle(),
                             //current_group_score
-                            group.getScoringParameters()
-                                    .stream()
-                                    .map(Group.ScoringParameter::score)
-                                    .mapToInt(Integer::intValue)
-                                    .sum(),
+                            group.getTotal_score(),
                             //last_update
                             group.getLast_update(),
                             //submission_deadline

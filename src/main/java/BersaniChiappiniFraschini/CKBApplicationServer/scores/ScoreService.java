@@ -1,5 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.scores;
 
+import BersaniChiappiniFraschini.CKBApplicationServer.analysis.EvaluationResult;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.EvalParameter;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
@@ -23,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -97,7 +99,7 @@ public class ScoreService {
                 .getGroups()
                 .stream().filter((g) -> g.getId().equals(group_id)).toList().get(0);
 
-        totalScore = group.getScoringParameters().stream().map(Group.ScoringParameter::score).reduce(0, Integer::sum);
+        totalScore = group.getTotal_score();
 
         var update = new Update()
                 .set("battles.$.groups.$[group].total_score", totalScore)
@@ -149,5 +151,21 @@ public class ScoreService {
         }
 
         return;
+    }
+
+    public void updateGroupAfterEvaluation(String groupId, Integer new_score, EvaluationResult results){
+        Date now = new Date(System.currentTimeMillis());
+
+        Query query = new Query(Criteria
+                .where("battles.groups._id").is(new ObjectId(groupId)));
+
+        var update = new Update()
+                .set("battles.$.groups.$[group].total_score", new_score)
+                .set("battles.$.groups.$[group].evaluation_result", results)
+                .set("battles.$.groups.$[group].last_update", now)
+                .filterArray(Criteria.where("group._id").is(new ObjectId(groupId)));
+
+        mongoTemplate.updateFirst(query, update, "tournament");
+
     }
 }
