@@ -8,6 +8,7 @@ import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
+import org.junit.platform.launcher.listeners.LoggingListener;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.springframework.asm.ClassReader;
@@ -18,6 +19,7 @@ import java.io.*;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,10 +38,10 @@ public class JavaTestRunner implements TestRunner {
 
         // Convert the JAR file path to URL with the "file" protocol
         URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()});
-
+        System.out.println("JARFILEPATH: "+jarFilePath);
         var canonicalName = findCanonicalNameInJar(jarFilePath, className);
+        System.out.println("CANONICALNAME: "+canonicalName);
         // Load the class dynamically
-
         var aClass = Class.forName(canonicalName, true, classLoader);
         classLoader.close();
         return aClass;
@@ -47,6 +49,7 @@ public class JavaTestRunner implements TestRunner {
 
     private Map<String, TestStatus> runTests(Class<?> testClass) {
         Map<String, TestStatus> results = new HashMap<>();
+        System.out.println("TEST CLASS NAME: "+testClass.getName());
 
         LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
                 .selectors(DiscoverySelectors.selectClass(testClass))
@@ -56,12 +59,14 @@ public class JavaTestRunner implements TestRunner {
         Launcher launcher = LauncherFactory.create();
         launcher.registerTestExecutionListeners(summaryListener);
         launcher.execute(discoveryRequest);
-
         TestExecutionSummary summary = summaryListener.getSummary();
 
         Method[] methods = testClass.getDeclaredMethods();
+        System.out.println("METHODS: "+Arrays.toString(methods));
         // This is not particularly good but seems to work.
         for (var method : methods) {
+            System.out.println("CHECKING METHOD: "+method.getName());
+            System.out.println(Arrays.toString(method.getAnnotations()));
             if (method.isAnnotationPresent(Test.class)) {
                 DisplayName displayNameAnnotation = method.getAnnotation(DisplayName.class);
                 // Initialize all as passed
@@ -72,6 +77,10 @@ public class JavaTestRunner implements TestRunner {
                 }
             }
         }
+        System.out.println("SUMMARY:");
+        System.out.println("# FOUND:"+summary.getTestsFoundCount());
+        System.out.println("# ABORTED:"+summary.getTestsAbortedCount());
+        System.out.println("# SKIPPED:"+summary.getTestsSkippedCount());
 
         for (var failure : summary.getFailures()) {
             failure.getException().printStackTrace();

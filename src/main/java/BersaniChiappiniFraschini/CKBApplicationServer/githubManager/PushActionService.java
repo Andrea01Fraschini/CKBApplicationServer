@@ -102,11 +102,9 @@ public class PushActionService {
             throw new RuntimeException(e);
         } finally {
             // Clean
-            deleteDirectory(new File(dirName));
+            //deleteDirectory(new File(dirName));
         }
         System.out.println(results.toString());
-
-
 
         // Update
 

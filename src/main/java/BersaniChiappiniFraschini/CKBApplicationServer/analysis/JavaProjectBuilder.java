@@ -40,7 +40,7 @@ public class JavaProjectBuilder implements ProjectBuilder {
 
     private String getJarPath(String projectPath) throws Exception {
         // I'm not sure if changing sh to bash is a problem. It works both on windows and wsl Ubuntu
-        String[] command = {"bash", "-c", "find %s -name *.jar".formatted(projectPath)};
+        String[] command = {"bash", "-c", "find %s -name '*.jar'".formatted(projectPath)};
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         // Redirect error stream to output stream
@@ -54,11 +54,11 @@ public class JavaProjectBuilder implements ProjectBuilder {
         var reader = new BufferedReader(new InputStreamReader(inputStream));
 
         // Read the output line by line
-        String output = reader.lines().collect(Collectors.joining());
+        String output = reader.readLine();
 
         var exitCode = process.waitFor();
         if (exitCode != 0) throw new Exception("No file found");
-
+        System.out.println("OUTPUT OF GETJARPATH: "+output);
         return output;
     }
 }
