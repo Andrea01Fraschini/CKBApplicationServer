@@ -40,15 +40,6 @@ public class JwtService {
                 .signWith(getSecretKey())
                 .compact();
     }
-/*    public String generateJWT(UserDetails userDetails, Map<String, Object> otherClaims){
-        return Jwts.builder()
-                .claims().add(otherClaims).and()
-                .content(userDetails.getUsername())
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + TOKEN_DURATION_MILLIS))
-                .signWith(getSecretKey())
-                .compact();
-    }*/
 
     public boolean isValid(String token, UserDetails userDetails){
         String username = extractUsername(token);

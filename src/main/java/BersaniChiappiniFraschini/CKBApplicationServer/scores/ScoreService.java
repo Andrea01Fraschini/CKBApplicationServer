@@ -2,12 +2,12 @@ package BersaniChiappiniFraschini.CKBApplicationServer.scores;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.analysis.EvaluationResult;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
-import BersaniChiappiniFraschini.CKBApplicationServer.battle.EvalParameter;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.ManualEvaluationRequest;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupMember;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
+import BersaniChiappiniFraschini.CKBApplicationServer.testRunners.TestStatus;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentSubscriber;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -33,20 +34,21 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 public class ScoreService {
     private final UserDetailsService userDetailsService;
-
     private final MongoTemplate mongoTemplate;
-
     private final NotificationService notificationService;
-
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     // set manual points
-    public ResponseEntity<PostResponse> setManualScores(ManualEvaluationRequest groupRequest){
+    public ResponseEntity<PostResponse> setManualScores(ManualEvaluationRequest manualEvaluationUpdate){
+        var tournament_id = manualEvaluationUpdate.getTournament_id();
+        var battle_id = manualEvaluationUpdate.getBattle_id();
+        var group_id = manualEvaluationUpdate.getGroup_id();
+        var manualAssessmentScore = manualEvaluationUpdate.getPoints();
 
-        // check is an educator and has the permission for the manual points
-        var context = SecurityContextHolder.getContext();
-        var auth = context.getAuthentication();
 
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+
+        // Check if user is EDUCATOR
         AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
         if(accountType != AccountType.EDUCATOR){
             var res = new PostResponse("Cannot add manual evaluation as student");
@@ -56,60 +58,64 @@ public class ScoreService {
         var educator = (User) userDetailsService.loadUserByUsername(auth.getName());
 
         Query query = new Query(Criteria
-                .where("_id").is(new ObjectId(groupRequest.getTournament_id()))
-                .and("educators._id").is(new ObjectId(educator.getId()))
+                .where("_id").is(new ObjectId(tournament_id))
+                .and("educators._id").is(new ObjectId(educator.getId())) // Update iff educator is a manager
+                .and("battles._id").is(new ObjectId(battle_id))
                 .and("battles.manual_evaluation").is(true)
-                .and("battles.groups._id").is(new ObjectId(groupRequest.getGroup_id()))
+                .and("battles.groups._id").is(new ObjectId())
                 .and("battles.groups.done_manual_evaluation").is(false));
 
         var update = new Update()
-                .set("battles.$.groups.$[group].scores."+ EvalParameter.MANUAL.name(), groupRequest.getPoints())
+                .set("battles.$.groups.$[group].evaluation_result.manual_assessment_score", manualAssessmentScore)
                 .set("battles.$.groups.$[group].done_manual_evaluation",true)
-                .filterArray(Criteria.where("group._id").is(new ObjectId(groupRequest.getGroup_id())));
+                .filterArray(Criteria.where("group._id").is(new ObjectId(group_id)));
 
+        // Update evaluation results with manual assessment score and set done_manual_evaluation to true
         mongoTemplate.updateFirst(query, update, "tournament");
 
-        // UPDATE THE PERSONAL SCORES AND BATTLE RANK
-        consolidateScores(groupRequest.getTournament_id(), groupRequest.getBattle_id(), groupRequest.getGroup_id());
+        // Recompute total scores and ranks
+        updateTotalScoreAndRanks(group_id);
 
-        // SEND EMAIL OF THE FINAL BATTLE RANK IF AND ONLY IF ALL MANUAL EVALUATIONS ARE DONE
-        notifyRankIfNoMissingManualEvaluation(groupRequest.getTournament_id(), groupRequest.getBattle_id());
+        // Send notifications for manual evaluation
+        notifyRankIfNoMissingManualEvaluation(tournament_id, battle_id);
 
         PostResponse p = new PostResponse("OK");
         return ResponseEntity.ok().body(p);
     }
 
-
-    // FINAL BATTLE RANK AVAILABLE => must be called every time the scores of the battle is changed
-    // ALSO UPDATE THE PERSONAL RANK OF THE TOURNAMENT
-    public void consolidateScores(String tournament_id, String battle_id, String group_id){
+    public void updateTotalScoreAndRanks(String group_id){
         Query query = new Query(Criteria
-                .where("_id").is(new ObjectId(tournament_id))
-                .and("battles._id").is(new ObjectId(battle_id))
-                .and("battles.groups._id").is(new ObjectId(group_id)));
+                .where("battles.groups._id").is(new ObjectId(group_id)));
 
-        int totalScore;
+        Tournament tournament = mongoTemplate.findOne(query, Tournament.class, "tournament");
 
-        Tournament result = mongoTemplate.findOne(query, Tournament.class, "tournament");
+        if(tournament == null) return;
 
-        if(result == null) return;
+        Group group = null;
 
-        Group group = result.getBattles()
-                .stream().filter((b) -> b.getId().equals(battle_id)).toList().get(0)
-                .getGroups()
-                .stream().filter((g) -> g.getId().equals(group_id)).toList().get(0);
+        // Find group in tournament (ugly, I know)
+        for(var battle : tournament.getBattles()){
+            var searchResult = battle.getGroups().stream().filter(g->g.getId().equals(group_id)).toList();
+            if(!searchResult.isEmpty()){
+                group = searchResult.get(0);
+                break;
+            }
+        }
 
-        totalScore = group.getTotal_score();
+        if (group == null){
+            throw new RuntimeException("Group not found in any battle but should be present in tournament");
+        }
+
+        var totalScore = computeTotalScore(group.getEvaluation_result());
 
         var update = new Update()
                 .set("battles.$.groups.$[group].total_score", totalScore)
-                .set("battles.$.groups.$[group].done_manual_evaluation",true)
                 .filterArray(Criteria.where("group._id").is(new ObjectId(group_id)));
 
         mongoTemplate.updateFirst(query, update, "tournament");
 
         // update also the personal score rank in the tournament
-        List<TournamentSubscriber> tournamentSubscriber = result.getSubscribed_users();
+        List<TournamentSubscriber> tournamentSubscriber = tournament.getSubscribed_users();
 
         for(GroupMember m : group.getMembers()){
             for(TournamentSubscriber ts : tournamentSubscriber){
@@ -121,7 +127,7 @@ public class ScoreService {
         }
 
         Query query2 = new Query(Criteria
-                .where("_id").is(new ObjectId(tournament_id)));
+                .where("_id").is(new ObjectId(tournament.getId())));
 
         var update2 = new Update()
                 .set("subscribed_users", tournamentSubscriber);
@@ -153,7 +159,9 @@ public class ScoreService {
         return;
     }
 
-    public void updateGroupAfterEvaluation(String groupId, Integer new_score, EvaluationResult results){
+    public void updateGroupAfterAutomaticEvaluation(String groupId, EvaluationResult results){
+        Integer new_score = computeTotalScore(results);
+
         Date now = new Date(System.currentTimeMillis());
 
         Query query = new Query(Criteria
@@ -167,5 +175,35 @@ public class ScoreService {
 
         mongoTemplate.updateFirst(query, update, "tournament");
 
+        updateTotalScoreAndRanks(groupId);
+    }
+
+    private Integer computeTotalScore(EvaluationResult results) {
+        var tests = results.getTests_results();
+        var staticAnalysis = results.getStatic_analysis_results();
+        var timeliness = results.getTimeliness_score();
+        Integer manualAssessmentScore = results.getManual_assessment_score();
+
+        // all tests must pass
+        for(var test : tests.values()){
+            if(test.equals(TestStatus.FAILED)){
+                return 0;
+            }
+        }
+
+        float staticScore = 0.0f;
+        for(var param : staticAnalysis.keySet()){
+            staticScore += staticAnalysis.get(param);
+        }
+        staticScore = staticScore/staticAnalysis.keySet().size();
+
+        int automaticScore = (int) (0.6 * staticScore + 0.4 * timeliness);
+
+        // manualAssessmentScore can be null
+        int manualScore = Objects.requireNonNullElse(manualAssessmentScore, automaticScore);
+
+        double finalScore = 0.7 * manualScore + 0.3 * automaticScore;
+
+        return (int) finalScore;
     }
 }

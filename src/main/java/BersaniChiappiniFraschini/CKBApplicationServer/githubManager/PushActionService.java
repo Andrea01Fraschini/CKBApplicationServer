@@ -4,22 +4,16 @@ import BersaniChiappiniFraschini.CKBApplicationServer.analysis.CodeAnalysisServi
 import BersaniChiappiniFraschini.CKBApplicationServer.analysis.EvaluationResult;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.BattleService;
-import BersaniChiappiniFraschini.CKBApplicationServer.battle.EvalParameter;
 import BersaniChiappiniFraschini.CKBApplicationServer.config.JwtService;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
-import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupService;
 import BersaniChiappiniFraschini.CKBApplicationServer.scores.ScoreService;
-import BersaniChiappiniFraschini.CKBApplicationServer.testRunners.TestStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.Date;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -95,37 +89,12 @@ public class PushActionService {
             // Clean
             deleteDirectory(new File(dirName));
         }
+        System.out.println(results);
 
         // =============== UPDATE SCORE AND INFO ===============
-        Integer totalScore = calculateScore(results);
-        System.out.println(results);
-        System.out.println("TOTAL SCORE: "+totalScore);
-
-        scoreService.updateGroupAfterEvaluation(group.getId(), totalScore, results);
+        scoreService.updateGroupAfterAutomaticEvaluation(group.getId(), results);
     }
 
-    private Integer calculateScore(EvaluationResult results) {
-        var tests = results.getTestsResults();
-        var staticAnalysis = results.getStaticAnalysisResults();
-        var timeliness = results.getTimelinessScore();
-
-        // all tests must pass
-        for(var test : tests.values()){
-            if(test.equals(TestStatus.FAILED)){
-                return 0;
-            }
-        }
-
-        float staticScore = 0.0f;
-        for(var param : staticAnalysis.keySet()){
-            staticScore += staticAnalysis.get(param);
-        }
-        staticScore = staticScore/staticAnalysis.keySet().size();
-
-        var finalScore = 0.6*staticScore + 0.4*timeliness;
-
-        return (int) finalScore;
-    }
 
     private static void deleteDirectory(File file) {
         File[] children = file.listFiles();

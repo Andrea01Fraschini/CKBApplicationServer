@@ -59,11 +59,6 @@ class GetBattleTest {
 
     @BeforeEach
     void setup(){
-        Map<EvalParameter, Integer> scores = new HashMap<>();
-        scores.put(EvalParameter.QUALITY, 60);
-        scores.put(EvalParameter.TESTS, 100);
-        scores.put(EvalParameter.RELIABILITY, 40);
-
         var leader = new GroupMember(User.builder()
                 .username("Leader name")
                 .build());
@@ -87,7 +82,6 @@ class GetBattleTest {
                                 .id("ABCDEF0123456789ABBEDD01")
                                 .leader(leader)
                                 .members(List.of(leader,sender))
-                                // .scores(scores) // TODO: change
                                 .build()))
                         .build(),
                         Battle.builder()

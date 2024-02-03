@@ -13,13 +13,10 @@ import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.scores.ScoreService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.*;
-import BersaniChiappiniFraschini.CKBApplicationServer.uploadFile.FilesStorageService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import lombok.*;
 import org.bson.types.ObjectId;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
@@ -33,12 +30,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import org.springframework.web.multipart.MultipartFile;
 
 
 @Service
@@ -265,19 +258,6 @@ public class BattleService {
         List<Group> groupsUpdate = automaticControl(tournament, battle);
 
         return () -> {
-            /*
-            var repositoryUrl = battleNew.getRepository();
-
-            var query = Query.query(
-                    Criteria.where("_id")
-                            .is(new ObjectId(tournament.getId()))
-                            .and("battles._id")
-                            .is(new ObjectId(battleNew.getId()))
-            );
-            var update = new Update().set("repository", repositoryUrl);
-            mongoTemplate.updateFirst(query, update, "tournament");
-            */
-
             for (var group : groupsUpdate) {
                 String token = group.getAPI_Token();
                 Runnable taskSendEmail = () -> notificationService.sendRepositoryInvites(group, battle, token);
@@ -319,7 +299,7 @@ public class BattleService {
             return () -> {
                 for (var group : groups) {
                     // update the total score for ech group of the battle
-                    scoreService.consolidateScores(tournament.getId(), battle.getId(), group.getId());
+                    scoreService.updateTotalScoreAndRanks(group.getId());
                     Runnable taskSendEmail = () -> notificationService.sendNewBattleRankAvailable(group, tournamentTitle, battleTitle);
                     executor.submit(taskSendEmail);
                 }

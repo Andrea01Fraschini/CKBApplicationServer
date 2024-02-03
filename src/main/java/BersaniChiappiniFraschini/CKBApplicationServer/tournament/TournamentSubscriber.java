@@ -13,7 +13,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Document
 @Builder
 public class TournamentSubscriber {
     private String id;

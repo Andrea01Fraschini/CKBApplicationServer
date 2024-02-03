@@ -1,7 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.analysis;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
-import BersaniChiappiniFraschini.CKBApplicationServer.battle.EvalParameter;
 import BersaniChiappiniFraschini.CKBApplicationServer.ecaRunners.ECARunner;
 import BersaniChiappiniFraschini.CKBApplicationServer.ecaRunners.JavaECARunner;
 import BersaniChiappiniFraschini.CKBApplicationServer.testRunners.JavaTestRunner;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -44,8 +42,8 @@ public class CodeAnalysisService {
         var staticAnalysisResults = analysisTools.ecaRunner.launchExternalCodeAnalysis(projectDirectory, evaluationParameters);
 
         EvaluationResult results = new EvaluationResult();
-        results.setTestsResults(testResults);
-        results.setStaticAnalysisResults(staticAnalysisResults);
+        results.setTests_results(testResults);
+        results.setStatic_analysis_results(staticAnalysisResults);
 
         // timeliness score calculation
         Date now = new Date(System.currentTimeMillis());
@@ -55,7 +53,7 @@ public class CodeAnalysisService {
         // score calculated as rounded down percentage of time remaining over the total duration of the battle
         float timeRatio = (float)timeRemaining / (float)battleDurationMillis;
         Integer timelinessScore = (int) (timeRatio * 100);
-        results.setTimelinessScore(timelinessScore);
+        results.setTimeliness_score(timelinessScore);
 
         return results;
     }

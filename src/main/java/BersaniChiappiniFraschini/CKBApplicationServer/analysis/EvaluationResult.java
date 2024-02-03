@@ -8,8 +8,8 @@ import java.util.Map;
 
 @Data
 public class EvaluationResult {
-    private Map<String, TestStatus> testsResults;
-    private Map<EvalParameter, Integer> staticAnalysisResults;
-    private Integer timelinessScore;
-    // private Integer manualAssessmentScore; // ?
+    private Map<String, TestStatus> tests_results;
+    private Map<EvalParameter, Integer> static_analysis_results;
+    private Integer timeliness_score;
+    private Integer manual_assessment_score;
 }

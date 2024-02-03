@@ -19,8 +19,8 @@ public class ScoreController {
 
     @PostMapping("/manualscores")
     public ResponseEntity<PostResponse> setManualPoints(
-            @RequestBody ManualEvaluationRequest groupRequest
+            @RequestBody ManualEvaluationRequest manualEvaluationUpdate
     ){
-        return scoreService.setManualScores(groupRequest);
+        return scoreService.setManualScores(manualEvaluationUpdate);
     }
 }
