@@ -19,5 +19,4 @@ public class Notification {
     private NotificationType type;
     private Date creation_date;
     private boolean is_closed;
-    //private Invite invite; // Maybe it's not necessary
 }

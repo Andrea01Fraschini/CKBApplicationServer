@@ -4,6 +4,8 @@ import BersaniChiappiniFraschini.CKBApplicationServer.authentication.Authenticat
 import BersaniChiappiniFraschini.CKBApplicationServer.config.JwtService;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.githubManager.GitHubManagerService;
+import BersaniChiappiniFraschini.CKBApplicationServer.group.Group;
+import BersaniChiappiniFraschini.CKBApplicationServer.group.GroupMember;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.*;
@@ -69,14 +71,17 @@ class BattleServiceTest {
         when(authenticationService.generateToken(anyString()))
                 .thenReturn("myb34ut1fult0k3n");
 
+        var userA = User.builder().username("I'm AAAAAA student").build();
+        var userB = User.builder().username("I'm a subscriber").build();
+        var userC = User.builder().username("I'm a new subscriber").build();
+
         when(tournamentRepository.findTournamentByTitle(anyString()))
                 .thenReturn(Tournament.builder()
                         .id("FFFFFF0123451989BBBBBB99")
-                        .subscribed_users(List.of(new TournamentSubscriber(
-                                User.builder()
-                                        .username("I'm a subscriber")
-                                        .build()
-                        )))
+                        .subscribed_users(List.of(
+                                new TournamentSubscriber(userA),
+                                new TournamentSubscriber(userB),
+                                new TournamentSubscriber(userC)))
                         .educators(List.of(new TournamentManager(User.builder()
                                 .username("Tyler the creator")
                                 .build())))
@@ -85,13 +90,13 @@ class BattleServiceTest {
                                 .enrollment_deadline(new Date(System.currentTimeMillis()+1000*3600))
                                 .min_group_size(1)
                                 .max_group_size(3)
+                                .groups(List.of(Group.builder()
+                                        .members(List.of(
+                                                new GroupMember(userA),
+                                                new GroupMember(userB)))
+                                        .build()))
                                 .title("Battle title")
                                 .build()))
-                        .subscribed_users(List.of(TournamentSubscriber.builder()
-                                .username("I'm a student")
-                                .build(), TournamentSubscriber.builder()
-                                        .username("I'm a subscriber")
-                                        .build()))
                         .build());
 
         when(gitHubManagerService.saveFileAndCreateRepository(any(), any(), any()))
@@ -101,8 +106,6 @@ class BattleServiceTest {
     @Test
     @WithMockUser(username = "Tyler the creator", authorities = { "EDUCATOR" })
     public void shouldCreateBattle() {
-
-
         BattleCreationRequest request = new BattleCreationRequest(
                 "Tournament title",
                 "New Battle title",
@@ -184,7 +187,7 @@ class BattleServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "I'm a subscriber", authorities = { "STUDENT" })
+    @WithMockUser(username = "I'm a new subscriber", authorities = { "STUDENT" })
     public void shouldEnrollGroup(){
         BattleEnrollmentRequest request = new BattleEnrollmentRequest(
                 "Tournament title",
@@ -248,6 +251,7 @@ class BattleServiceTest {
                                 .enrollment_deadline(new Date(System.currentTimeMillis()-1000*25))
                                 .min_group_size(1)
                                 .max_group_size(3)
+                                .groups(List.of())
                                 .title("Battle title")
                                 .build()))
                         .subscribed_users(List.of(TournamentSubscriber.builder()
@@ -290,6 +294,7 @@ class BattleServiceTest {
                                 .enrollment_deadline(new Date(System.currentTimeMillis()+1000*3600))
                                 .min_group_size(1)
                                 .max_group_size(2)
+                                .groups(List.of())
                                 .title("Battle title")
                                 .build()))
                         .subscribed_users(List.of(TournamentSubscriber.builder()

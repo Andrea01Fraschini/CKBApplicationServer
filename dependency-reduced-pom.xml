@@ -15,30 +15,6 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-pmd-plugin</artifactId>
-        <version>3.21.2</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>BersaniChiappiniFraschini</groupId>
-            <artifactId>CKBApplicationServer</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-          </dependency>
-        </dependencies>
-        <configuration>
-          <rulesets>
-            <ruleset>ECAConfig/quickstart.xml</ruleset>
-          </rulesets>
-          <printFailingErrors>true</printFailingErrors>
-        </configuration>
-      </plugin>
-      <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>

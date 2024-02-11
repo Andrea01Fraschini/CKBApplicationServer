@@ -1,6 +1,5 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.authentication;
 
-import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

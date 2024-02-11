@@ -7,6 +7,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.ecaRunners.JavaECAs.JavaSe
 import BersaniChiappiniFraschini.CKBApplicationServer.ecaRunners.JavaECAs.QualityScoreProcessor;
 import lombok.NoArgsConstructor;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ public class JavaECARunner implements ECARunner {
     }
 
     @Override
-    public Map<EvalParameter, Integer> launchExternalCodeAnalysis(String projectDirectory, List<EvalParameter> evaluationParameters) {
+    public Map<EvalParameter, Integer> launchExternalCodeAnalysis(String projectDirectory, List<EvalParameter> evaluationParameters) throws IOException {
         Map<EvalParameter, Integer> results = new HashMap<>();
         for (var param : evaluationParameters) {
             Integer result = null;

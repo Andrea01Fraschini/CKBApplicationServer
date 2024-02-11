@@ -11,8 +11,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,6 +46,9 @@ class GroupServiceTest {
                         .title("Battle title")
                         .groups(List.of(Group.builder()
                                 .id("ABCDEF0123456789ABBEDD01")
+                                .leader(new GroupMember(User.builder()
+                                        .username("I'm the leader")
+                                        .build()))
                                 .build()))
                         .build()))
                 .build();
@@ -132,6 +137,66 @@ class GroupServiceTest {
         assertAll(
                 ()->assertEquals(0, invites.size()),
                 ()->assertNull(members)
+        );
+    }
+
+    @Test
+    @WithMockUser(username = "I'm the leader", authorities = {"STUDENT"})
+    public void shouldSetRepositoryOfTheGroup(){
+        var request = new SetGroupRepositoryRequest(
+                "Tournament title",
+                "ABCDEF0123456789ABBEDD01".toLowerCase(),
+                "https://github.lmao/MyName/MyRepo.git",
+                "I'm the leader"
+        );
+
+        var response = groupService.setRepository(request);
+
+        Tournament updatedTournament = mongoTemplate.findOne(new Query(), Tournament.class, "tournament");
+
+        var group = updatedTournament.getBattles().get(0).getGroups().get(0);
+
+        assertAll(
+                ()->assertEquals("https://github.lmao/MyName/MyRepo.git", group.getRepository()),
+                ()->assertEquals(HttpStatus.OK, response.getStatusCode())
+        );
+
+    }
+
+    @Test
+    @WithMockUser(username = "w0t", authorities = {"EDUCATOR"})
+    public void shouldNotSetRepositoryAsEducator(){
+        var request = new SetGroupRepositoryRequest(
+                "Tournament title",
+                "ABCDEF0123456789ABBEDD01".toLowerCase(),
+                "https://github.lmao/MyName/MyRepo.git",
+                "I'm the leader"
+        );
+
+        var response = groupService.setRepository(request);
+
+        assertAll(
+                ()->assertEquals("Cannot set repository of the group", response.getBody().getError_msg()),
+                ()->assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode())
+        );
+
+    }
+
+    @Test
+    @WithMockUser(username = "I'm the leader", authorities = {"STUDENT"})
+    public void shouldNotSetRepositoryIfNotLeader(){
+        var request = new SetGroupRepositoryRequest(
+                "Tournament title",
+                "ABCDEF0123456789ABBEDD01".toLowerCase(),
+                "https://github.lmao/MyName/MyRepo.git",
+                "stacosanonhasensodovrebbecontrollaredaldbmaormaichissenefrega"
+        );
+
+        var response = groupService.setRepository(request);
+
+        assertAll(
+                ()->assertEquals("Only leader of the group can modify the repository", response.getBody().getError_msg()),
+                ()->assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode())
         );
     }
 }

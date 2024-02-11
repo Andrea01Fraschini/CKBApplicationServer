@@ -22,6 +22,7 @@ import java.util.List;
 public class Tournament {
     @Id
     private String id;
+
     @Indexed(unique = true)
     private String title;
     private String educator_creator;

@@ -4,9 +4,11 @@ import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationD
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
+import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -14,6 +16,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -25,7 +28,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class DashboardService {
     private final TournamentRepository tournamentRepository;
-    private final UserRepository userRepository;
+    private final UserDetailsService userDetailsService;
 
     private final MongoTemplate mongoTemplate;
     public DashboardResponse getDashboard() {
@@ -33,8 +36,9 @@ public class DashboardService {
         AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
         String username = auth.getName();
 
+        User user = (User) userDetailsService.loadUserByUsername(username);
+
         // Fetch user notifications
-        var user = userRepository.findUserByUsername(username).get();
         var notifications = user.getNotifications();
 
         List<CardInfo> cards = new ArrayList<>();
@@ -43,33 +47,33 @@ public class DashboardService {
 
                 //tournament_title: from title of tournament from TOURNAMENT
                 //battle_title: from title of battle or from where is the user in the group in which battle from GROUP O BATTLE
-                //current_group_score: number => sum of the scores map from GROUP
                 //last_update: last_update from GROUP
                 //submission_deadline: submission_deadline => FROM BATTLE in which the group is enrolled
                 //students: list of the students in the GROUP
+                List<GroupBattleTournamentInfo> groupBattle = getGroupsByUsername(username);
 
-                List<SupportClassInfoStudent> tournaments = getGroupByUsername(username);
-
-                for(var t : tournaments){
-                    Group group = t.getGroups();
+                for(var gInfo : groupBattle){
+                    Group group = gInfo.getGroup();
 
                     cards.add(new CardInfoStudent(
                             //tournament_title
-                            //t.getTitle(),
-                            t.getTournamentTitle(),
+                            gInfo.getTournamentTitle(),
                             //battle_title
-                            t.getTitle(),
+                            gInfo.getBattleTitle(),
                             //current_group_score
                             group.getTotal_score(),
+                            // group leader
+                            group.getLeader().getUsername(),
                             //last_update
                             group.getLast_update(),
                             //submission_deadline
-                            t.getSubmission_deadline(),
+                            gInfo.getSubmissionDeadline(),
                             //students
                             group.getMembers()
                                     .stream()
                                     .map(e -> new CardInfoStudent.Student(e.getUsername()))
-                                    .toList()
+                                    .toList(),
+                            group.getAPI_Token()
                     ));
                 }
             }
@@ -82,6 +86,7 @@ public class DashboardService {
                             t.getSubscribed_users().size(),
                             t.getBattles().size(),
                             t.getSubscription_deadline(),
+                            t.is_open(),
                             t.getEducators()
                                     .stream()
                                     .map(e -> new CardInfoEducator.Educator(e.getUsername()))
@@ -96,6 +101,7 @@ public class DashboardService {
         return DashboardResponse.builder()
                 .account_type(accountType.name())
                 .notifications(notifications.stream()
+                        .filter(notification -> !notification.is_closed())
                         .map(notification -> new NotificationDetails(
                                 notification.getId(),
                                 notification.getMessage(),
@@ -105,29 +111,42 @@ public class DashboardService {
                 .build();
     }
 
-    private List<SupportClassInfoStudent> getGroupByUsername(String username){
-        Criteria criteria = Criteria.where("battles.groups.members.username").is(username);
-
-        //IDEA: db.tournament.aggregate([{$match: {"battles.groups.members.username": "Prova"}}, {$unwind: "$battles"}, {$unwind: "$battles.groups"}, {$project: {"tournamentTitle": "$title", "battles.title": 1, "battles.submission_deadline": 1,"battles.groups": 1}}])
-        AggregationOperation match = Aggregation.match(criteria);
+    /**
+     * Find the groups where the user is in.
+     * @param username
+     * @return the list of information necessary to show to the frontend for the groups that the user is in.
+     */
+    private List<GroupBattleTournamentInfo> getGroupsByUsername(String username){
+        //IDEA: db.tournament.aggregate([{$match: {"battles.groups.members.username": "Uname"}}, {$unwind: "$battles"}, {$unwind: "$battles.groups"}, {$project: {"tournamentTitle": "$title", "battles.title": 1, "battles.submission_deadline": 1,"battles.groups": 1}}])
+        // get tournament where the user is participating
         AggregationOperation unwind1 = Aggregation.unwind("battles");
+
+        AggregationOperation project1 = Aggregation.project("battles").and("title").as("tournamentTitle");
+        AggregationOperation project2 = Aggregation.project("tournamentTitle", "battles")
+                .and("battles.title").as("battleTitle")
+                .and("battles.submission_deadline").as("submissionDeadline");
+
         AggregationOperation unwind2 = Aggregation.unwind("battles.groups");
 
-        AggregationOperation project1 = Aggregation.project("title","battles").and("title").as("tournamentTitle");
+        AggregationOperation project3 = Aggregation.project("tournamentTitle", "battleTitle", "submissionDeadline")
+                .and("battles.groups").as("group");
 
-        AggregationOperation project2 = Aggregation.project("tournamentTitle", "battles.title", "battles.submission_deadline","battles.groups");
-        Aggregation aggregation = Aggregation.newAggregation(match, unwind1, unwind2, project1, project2);
-        AggregationResults<SupportClassInfoStudent> results = mongoTemplate.aggregate(aggregation, "tournament", SupportClassInfoStudent.class);
+        Criteria criteria = Criteria.where("group.members.username").is(username);
+        AggregationOperation match = Aggregation.match(criteria);
 
+        Aggregation aggregation = Aggregation.newAggregation(unwind1, project1, project2, unwind2, project3, match);
+        AggregationResults<GroupBattleTournamentInfo> results = mongoTemplate.aggregate(aggregation, "tournament", GroupBattleTournamentInfo.class);
+        
         return results.getMappedResults();
     }
 
     @Data
     @AllArgsConstructor
-    private static class SupportClassInfoStudent {
+    @NoArgsConstructor
+    private static class GroupBattleTournamentInfo {
         private String tournamentTitle;
-        private String title;
-        private Date submission_deadline;
-        private Group groups;
+        private String battleTitle;
+        private Date submissionDeadline;
+        private Group group;
     }
 }

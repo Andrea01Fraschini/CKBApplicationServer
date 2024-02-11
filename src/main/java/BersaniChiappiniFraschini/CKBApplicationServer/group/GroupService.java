@@ -81,6 +81,6 @@ public class GroupService {
         mongoTemplate.updateFirst(query, update, "tournament");
 
         var res = new PostResponse("OK");
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(res);
+        return ResponseEntity.ok().body(res);
     }
 }

@@ -24,8 +24,6 @@ public class UserService {
     private final UserDetailsService userDetailsService;
     private final MongoTemplate mongoTemplate;
 
-
-
     public List<String> searchEducatorByName(String name){
         var users =  userRepository.findByAccountTypeAndUsernameLike(AccountType.EDUCATOR, name);
         return users.stream().map(User::getUsername).toList();

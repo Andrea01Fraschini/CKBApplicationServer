@@ -59,9 +59,9 @@ public class NotificationService {
         sendNotification(receiver.getEmail(), message, NotificationType.NEW_INVITE);
     }
 
-    public void sendInviteStatusUpdate(User sender, boolean accepted) {
+    public void sendInviteStatusUpdate(User sender, User receiver, boolean accepted) {
         String message = "%s has %s your invite"
-                .formatted(sender.getUsername(), accepted ? "accepted" : "rejected");
+                .formatted(receiver.getUsername(), accepted ? "accepted" : "rejected");
 
         sendNotification(sender.getEmail(), message, NotificationType.INVITE_STATUS_UPDATE);
     }

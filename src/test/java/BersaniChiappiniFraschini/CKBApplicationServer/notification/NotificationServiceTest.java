@@ -11,7 +11,6 @@ import BersaniChiappiniFraschini.CKBApplicationServer.user.UserRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.AdditionalAnswers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.mail.SimpleMailMessage;
@@ -26,7 +25,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig
@@ -129,14 +127,15 @@ class NotificationServiceTest {
     @Test
     public void shouldNotifyResponseToInvite(){
         var sender = User.builder().username("Test sender").build();
+        var receiver = User.builder().username("Test receiver").build();
 
-        notificationService.sendInviteStatusUpdate(sender, true);
+        notificationService.sendInviteStatusUpdate(sender, receiver, true);
 
         String notificationHeader = "You received a notification from code kata battle:\n\n'%s'";
         String templateMsg = notificationHeader.formatted("%s has %s your invite");
         String templateEmail = "%s\n\n-CodeKataBattle notification service";
         String expectedEmail = templateEmail.formatted(
-                templateMsg.formatted("Test sender", "accepted"));
+                templateMsg.formatted("Test receiver", "accepted"));
 
         assertEquals(expectedEmail.trim(), outputStreamCaptor.toString().trim());
     }

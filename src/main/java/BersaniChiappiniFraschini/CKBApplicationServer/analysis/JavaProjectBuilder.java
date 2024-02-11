@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.stream.Collectors;
 
 public class JavaProjectBuilder implements ProjectBuilder {
     @Override
@@ -38,8 +37,13 @@ public class JavaProjectBuilder implements ProjectBuilder {
         return getJarPath(projectDirectory);
     }
 
+    /**
+     * Finds the path to the compiled jar.
+     * @param projectPath path to the built project.
+     * @return the path to the jar.
+     * @throws Exception when the jar is not found.
+     */
     private String getJarPath(String projectPath) throws Exception {
-        // I'm not sure if changing sh to bash is a problem. It works both on windows and wsl Ubuntu
         String[] command = {"bash", "-c", "find %s -name '*.jar'".formatted(projectPath)};
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);

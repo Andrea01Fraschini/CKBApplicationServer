@@ -8,7 +8,6 @@ import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
-import org.junit.platform.launcher.listeners.LoggingListener;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.springframework.asm.ClassReader;
@@ -33,13 +32,22 @@ public class JavaTestRunner implements TestRunner {
         return runTests(testClass);
     }
 
+    /**
+     * Loads the test class as an internal Class.
+     * @param jarFilePath path to jar file.
+     * @param className name of the class containing tests.
+     * @return the loaded Class object.
+     * @throws Exception when the class is not found.
+     */
     private Class<?> loadTestClassFromJar(String jarFilePath, String className) throws Exception {
         File jarFile = new File(jarFilePath);
 
         // Convert the JAR file path to URL with the "file" protocol
         URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()});
-        System.out.println("JARFILEPATH: " + jarFilePath);
+        System.out.println("JAR FILE PATH: " + jarFilePath);
         var canonicalName = findCanonicalNameInJar(jarFilePath, className);
+        System.out.printf("CANONICAL NAME FOR %s: %s%n", className, canonicalName);
+
         // Load the class dynamically
         var aClass = Class.forName(canonicalName, true, classLoader);
         System.out.println("TEST CLASS: " + aClass);
@@ -47,6 +55,11 @@ public class JavaTestRunner implements TestRunner {
         return aClass;
     }
 
+    /**
+     * Runs the tests by calling JUnit on the loaded class.
+     * @param testClass class containing tests.
+     * @return the results of the tests as (Name of testcase, Status).
+     */
     private Map<String, TestStatus> runTests(Class<?> testClass) {
         Map<String, TestStatus> results = new HashMap<>();
 
@@ -61,12 +74,13 @@ public class JavaTestRunner implements TestRunner {
         TestExecutionSummary summary = summaryListener.getSummary();
 
         Method[] methods = testClass.getDeclaredMethods();
-        System.out.println("METHODS: "+Arrays.toString(methods));
+        System.out.println("METHODS: "+ Arrays.toString(methods));
         // This is not particularly good but seems to work.
         for (var method : methods) {
             System.out.println("CHECKING METHOD: "+method.getName());
             System.out.println(Arrays.toString(method.getAnnotations()));
             if (method.isAnnotationPresent(Test.class)) {
+                System.out.println("REGISTERED METHOD: " + method.getName());
                 DisplayName displayNameAnnotation = method.getAnnotation(DisplayName.class);
                 // Initialize all as passed
                 if (displayNameAnnotation == null) {
@@ -89,7 +103,13 @@ public class JavaTestRunner implements TestRunner {
         return results;
     }
 
-    // Finds the name of the package where the file is located in the jar file.
+    /**
+     * Finds the name of the package where the test-file is located in the jar file.
+     * @param jarFilePath path to the jar file.
+     * @param targetClassName name of the class containing tests.
+     * @return the canonical name of the test class inside the jar.
+     * @throws IOException when the jar is not found.
+     */
     public String findCanonicalNameInJar(String jarFilePath, String targetClassName) throws IOException {
         File file = new File(jarFilePath);
         try (JarFile jarFile = new JarFile(file)) {
@@ -113,6 +133,9 @@ public class JavaTestRunner implements TestRunner {
         return null; // Class not found in the JAR
     }
 
+    /**
+     * Visitor used to convert the path to the test file into a package path.
+     */
     @Getter
     private static class ClassNameVisitor extends ClassVisitor {
         private String className;

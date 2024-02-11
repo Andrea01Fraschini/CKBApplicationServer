@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document
-public class Invite { // Work In progress
+public class Invite {
     @Id
     private String id;
     @Indexed

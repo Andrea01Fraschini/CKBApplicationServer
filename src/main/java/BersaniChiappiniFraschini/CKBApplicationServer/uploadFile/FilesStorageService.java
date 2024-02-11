@@ -9,12 +9,9 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -24,10 +21,9 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class FilesStorageService {
 
-    // substitute System.getProperty("user.dir") with "./"
-
-    private final String save = System.getProperty("user.dir")+"/SAVE";
+    private final String save =  System.getProperty("user.dir")+"/SAVE";
     private final String extract = System.getProperty("user.dir")+"/EXTRACT";
+
 
     private String internName = "";
     private String battle_name;
@@ -73,21 +69,10 @@ public class FilesStorageService {
         FileSystemUtils.deleteRecursively(Paths.get(extract+"/"+battle_name).toFile());
     }
 
-
     public String pathToGitHub(){
-
-        File[] subdirectories = Paths.get(extract+"/"+battle_name).toFile().listFiles();
-
-        if (subdirectories != null) {
-            for (File subdirectory : subdirectories) {
-                if (subdirectory.isDirectory() && subdirectory.getName().equals(internName)) {
-                   return subdirectory.getPath();
-                }
-            }
-        }
-
-        return null;
+        return Paths.get(extract+"/"+battle_name).toFile().getPath();
     }
+
     public void unzip(InputStream zipInputStream, String battle_name) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(zipInputStream)) {
             ZipEntry entry;

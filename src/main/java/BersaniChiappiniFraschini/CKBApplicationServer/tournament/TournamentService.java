@@ -4,10 +4,10 @@ import BersaniChiappiniFraschini.CKBApplicationServer.battle.Battle;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.invite.InviteService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
-import BersaniChiappiniFraschini.CKBApplicationServer.scores.ScoreService;
 import BersaniChiappiniFraschini.CKBApplicationServer.search.BattleInfo;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -38,7 +38,6 @@ public class TournamentService {
     private final MongoTemplate mongoTemplate;
     private final InviteService inviteService;
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
-    private final ScoreService scoreService;
 
     public ResponseEntity<PostResponse> createTournament(TournamentCreationRequest request){
 
@@ -63,6 +62,12 @@ public class TournamentService {
         var educator = (User) userDetailsService.loadUserByUsername(username);
         var subscription_deadline = request.getSubscription_deadline();
 
+        // Check for self invite
+        if (request.getInvited_managers().stream().anyMatch(manager_name -> manager_name.equals(username))) {
+            var res = new PostResponse("Cannot invite yourself");
+            return ResponseEntity.badRequest().body(res);
+        }
+
         // Create new tournament
         Tournament tournament = Tournament.builder()
                 .title(title)
@@ -79,6 +84,11 @@ public class TournamentService {
         // Notify the whole world about this
         Runnable taskSendEmail = () -> notificationService.sendTournamentCreationNotifications(tournament);
         executor.submit(taskSendEmail);
+
+        if(request.getInvited_managers().stream().anyMatch((m) -> m.equals(username))){
+            var res = new PostResponse("Cannot invite yourself");
+            return ResponseEntity.badRequest().body(res);
+        }
 
         // for each user in request.invited_managers, send invite request
         for (var invitee : request.getInvited_managers()) {
@@ -143,7 +153,7 @@ public class TournamentService {
         Tournament tournament = tournamentRepository.findTournamentByTitle(tournamentTitle);
 
         if(tournament == null){
-            new ResponseEntity<>(new PostResponse("Tournament doesn't found"), HttpStatus.BAD_REQUEST);
+            new ResponseEntity<>(new PostResponse("Tournament not found found"), HttpStatus.BAD_REQUEST);
         }
 
         List<BattleInfo> battleInfos = new ArrayList<>();
@@ -170,8 +180,10 @@ public class TournamentService {
                 .is_open(tournament.is_open())
                 .creator(tournament.getEducator_creator())
                 .managers(tournament.getEducators().stream().map(TournamentManager::getUsername).toList())
+                .pending_invites(tournament.getPending_invites())
                 .battles(battleInfos)
                 .leaderboard(tournament.getLeaderboard())
+                .subscription_deadline(tournament.getSubscription_deadline())
                 .already_subscribed(tournament.getSubscribed_users()
                         .stream()
                         .anyMatch(subscriber -> subscriber.getUsername().equals(username)))
@@ -180,14 +192,14 @@ public class TournamentService {
         return new ResponseEntity<>(tournamentGetResponse, HttpStatus.ACCEPTED);
     }
 
-    public ResponseEntity<PostResponse> closeTournament(String tournamentTitle){
+    public ResponseEntity<TournamentPersonalRank> closeTournament(String tournamentTitle){
         //check if an educator
         var context = SecurityContextHolder.getContext();
         var auth = context.getAuthentication();
 
         AccountType accountType = AccountType.valueOf(auth.getAuthorities().stream().toList().get(0).toString());
         if(accountType != AccountType.EDUCATOR){
-            var res = new PostResponse("Cannot close a tournament as student");
+            var res = new TournamentPersonalRank("Cannot close tournament as student");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
         }
 
@@ -198,7 +210,7 @@ public class TournamentService {
 
         for(Battle b : battles){
             if(!date.after(b.getSubmission_deadline())){
-                PostResponse postResponse = new PostResponse("Not all battles are closed");
+                var postResponse = new TournamentPersonalRank("Not all battles are closed");
                 return ResponseEntity.badRequest().body(postResponse);
             }
         }
@@ -206,19 +218,33 @@ public class TournamentService {
         // remember a student can play in several battle
 
         // here update badges, we don't have to implement them
-        // TODO: scoreService.updateScores(tournament);
 
-        for(TournamentSubscriber u : tournament.getSubscribed_users()) {
-            Runnable taskSendEmail = () -> notificationService.sendGlobalRanksAvailable(u.getEmail(), tournamentTitle);
-            executor.submit(taskSendEmail);
-        }
 
         // Update in database
         var criteria = Criteria.where("title").is(tournamentTitle);
         var update = new Update().set("is_open", false);
         mongoTemplate.updateFirst(Query.query(criteria), update, Tournament.class);
 
-        return ResponseEntity.ok().body(null);
+        // Get Rank Personal
+
+        var getPersonalRank = Criteria.where("title").is(tournamentTitle);
+        Tournament t = mongoTemplate.findOne(Query.query(getPersonalRank), Tournament.class,"tournament");
+
+        if(t == null){
+            var postResponse = new TournamentPersonalRank("Not found tournament for the personal rank");
+            return ResponseEntity.badRequest().body(postResponse);
+        }
+
+        List<TournamentSubscriber> ts = t.getSubscribed_users();
+
+        for(TournamentSubscriber tss : ts) {
+            Runnable taskSendEmail = () -> notificationService.sendGlobalRanksAvailable(tss.getEmail(), tournamentTitle);
+            executor.submit(taskSendEmail);
+        }
+
+        var postResponse = new TournamentPersonalRank(ts);
+
+        return ResponseEntity.ok().body(postResponse);
     }
 
     public ResponseEntity<List<TournamentController.TournamentsListEntry>> getTournamentsList() {
@@ -234,5 +260,20 @@ public class TournamentService {
         );
     }
 
+    @Data
+    static class TournamentPersonalRank{
+        private String error_msg;
+        private List<TournamentSubscriber> personalRank;
 
+        public TournamentPersonalRank(String error_msg){
+            this.error_msg = error_msg;
+            this.personalRank = null;
+        }
+
+        public TournamentPersonalRank(List<TournamentSubscriber> personalRank){
+            this.error_msg = null;
+            this.personalRank = personalRank;
+        }
+
+    }
 }

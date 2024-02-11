@@ -8,6 +8,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.group.ManagersService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
+import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentSubscriber;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserService;
@@ -51,7 +52,15 @@ class InviteServiceTest {
     @BeforeEach
     public void setup(){
         when(tournamentRepository.findTournamentByTitle(anyString()))
-                .thenReturn(Tournament.builder().id("idTest").build());
+                .thenReturn(Tournament.builder()
+                        .id("idTest")
+                        .subscribed_users(List.of(TournamentSubscriber.builder()
+                                .username("TestUser")
+                                .build(),
+                        TournamentSubscriber.builder()
+                                .username("OtherTestUser")
+                                .build()))
+                        .build());
     }
     @Test
     @WithMockUser(username = "TestUser", authorities = {"EDUCATOR"})
@@ -97,7 +106,13 @@ class InviteServiceTest {
         var sender = User.builder().username("TestUser").build();
         var battle = Battle.builder()
                 .title("Test Battle")
-                .groups(List.of(Group.builder().leader(new GroupMember(sender)).build()))
+                .min_group_size(1)
+                .max_group_size(2)
+                .groups(List.of(Group.builder()
+                        .leader(new GroupMember(sender))
+                        .pending_invites(List.of())
+                        .members(List.of(new GroupMember(sender)))
+                        .build()))
                 .build();
 
         when(userDetailsService.loadUserByUsername(any()))
@@ -107,6 +122,12 @@ class InviteServiceTest {
         when(tournamentRepository.findTournamentByTitle(anyString()))
                 .thenReturn(Tournament.builder()
                         .id("idTest")
+                        .subscribed_users(List.of(TournamentSubscriber.builder()
+                                        .username("TestUser")
+                                        .build(),
+                                TournamentSubscriber.builder()
+                                        .username("OtherTestUser")
+                                        .build()))
                         .battles(List.of(battle))
                         .build());
 
@@ -156,6 +177,12 @@ class InviteServiceTest {
         when(tournamentRepository.findTournamentByTitle(anyString()))
                 .thenReturn(Tournament.builder()
                         .id("idTest")
+                        .subscribed_users(List.of(TournamentSubscriber.builder()
+                                        .username("TestUser")
+                                        .build(),
+                                TournamentSubscriber.builder()
+                                        .username("OtherTestUser")
+                                        .build()))
                         .battles(List.of(battle))
                         .build());
 
@@ -191,6 +218,12 @@ class InviteServiceTest {
         when(tournamentRepository.findTournamentByTitle(anyString()))
                 .thenReturn(Tournament.builder()
                         .id("idTest")
+                        .subscribed_users(List.of(TournamentSubscriber.builder()
+                                        .username("TestUser")
+                                        .build(),
+                                TournamentSubscriber.builder()
+                                        .username("OtherTestUser")
+                                        .build()))
                         .battles(List.of(battle))
                         .build());
 
@@ -204,7 +237,7 @@ class InviteServiceTest {
 
         var error_msg = Objects.requireNonNull(response.getBody()).getError_msg();
         assertAll(
-                ()->assertEquals("No group found", error_msg),
+                ()->assertEquals("No group found or only leader can invite other students", error_msg),
                 ()->assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode())
         );
     }

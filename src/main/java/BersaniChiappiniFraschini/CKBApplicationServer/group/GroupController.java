@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/groups")
 @RequiredArgsConstructor
 public class GroupController {
-
     private final GroupService groupService;
 
     @PostMapping("/repository")

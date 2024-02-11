@@ -1,6 +1,7 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.tournament;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.battle.LeaderboardEntry;
+import BersaniChiappiniFraschini.CKBApplicationServer.invite.PendingInvite;
 import BersaniChiappiniFraschini.CKBApplicationServer.search.BattleInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +19,7 @@ public class TournamentGetResponse {
     private boolean is_open;
     private String creator;
     private List<String> managers;
+    private List<PendingInvite> pending_invites;
     private List<BattleInfo> battles;
     @Builder.Default
     private List<LeaderboardEntry> leaderboard = List.of();

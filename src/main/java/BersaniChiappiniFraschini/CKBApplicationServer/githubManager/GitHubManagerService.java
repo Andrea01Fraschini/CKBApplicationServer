@@ -17,16 +17,11 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Service
 @RequiredArgsConstructor
 public class GitHubManagerService {
     private final Environment environment;
-
-    // we can use it to upload the file in a thread
-    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     // Create Repository for the battle
     public String createRepository(String tournamentTitle, String battleTitle, String description) throws Exception {
@@ -55,17 +50,17 @@ public class GitHubManagerService {
     }
 
     // Upload the code of the battle
-    public boolean setCodeRepository(String repo, String pathFile) throws Exception {
+    public void setCodeRepository(String repo, String pathFile) throws Exception {
         String githubToken = environment.getProperty("github.token");
         String owner = environment.getProperty("github.repo.owner");
 
-        String[] splittedArray = repo.split("/");
-        String name = splittedArray[splittedArray.length - 1];
+        String[] splitArray = repo.split("/");
+        String name = splitArray[splitArray.length - 1];
 
         try {
             GitHub github = new GitHubBuilder().withOAuthToken(githubToken).build();
             GHRepository repository = github.getRepository(owner + "/" + name);
-            GHRef masterRef = repository.getRef("heads/main");  // Sostituisci con il nome della tua branch
+            GHRef masterRef = repository.getRef("heads/main");
             String baseTreeSha = masterRef.getObject().getSha();
 
 
@@ -74,10 +69,10 @@ public class GitHubManagerService {
             // build the tree with the files
             uploadDirectoryContents(new File(pathFile), "project", treeBuilder);
 
-            // Crea un nuovo albero
+            // Create a new tree
             GHTree tree = treeBuilder.create();
 
-            // Crea un nuovo commit
+            // Create a new commit
             GHCommit commit = repository.createCommit()
                     .message("Added project")
                     .tree(tree.getSha())
@@ -94,14 +89,12 @@ public class GitHubManagerService {
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
-
-        return true;
     }
 
     // After all protect the repository only fork the group can do
     public void protectRepo(String repo){
-        String[] splittedArray = repo.split("/");
-        String name = splittedArray[splittedArray.length - 1];
+        String[] splitArray = repo.split("/");
+        String name = splitArray[splitArray.length - 1];
 
         String githubToken = environment.getProperty("github.token");
         String owner = environment.getProperty("github.repo.owner");
@@ -153,14 +146,9 @@ public class GitHubManagerService {
 
     private void uploadDirectoryContents(File directory, String relativePath, GHTreeBuilder treeBuilder) throws Exception{
         for (File file : directory.listFiles()) {
-            if(file.getName().equals(".idea") || file.getName().equals("target")){
-                continue;
-            }else if (file.isFile()) {
-
+            if (file.isFile()) {
                 byte[] fileRead = Files.readAllBytes(file.toPath());
-
                 treeBuilder = treeBuilder.add(relativePath + "/" + file.getName(), fileRead, false);
-
             } else if (file.isDirectory()) {
                 uploadDirectoryContents(file, relativePath + "/" + file.getName(), treeBuilder);
             }
@@ -190,15 +178,15 @@ public class GitHubManagerService {
             InputStream i = file1.toURI().toURL().openStream();
             filesStorageService.unzip(i, clearBattleName);
             String path = filesStorageService.pathToGitHub();
-
             setCodeRepository(repo, path);
             protectRepo(repo);
-            filesStorageService.deleteAll();
-            return CompletableFuture.completedFuture(repo);
         } catch (Exception e) {
-            filesStorageService.deleteAll();
             return CompletableFuture.failedFuture(new Throwable(e.getMessage()));
+        } finally {
+            filesStorageService.deleteAll();
         }
+
+        return CompletableFuture.completedFuture(repo);
     }
 
 }

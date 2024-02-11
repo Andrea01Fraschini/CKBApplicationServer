@@ -39,7 +39,7 @@ public class TournamentController {
     }
 
     @PostMapping ("/close")
-    public ResponseEntity<PostResponse> closeTournament(
+    public ResponseEntity<TournamentService.TournamentPersonalRank> closeTournament(
             @RequestParam String tournamentTitle
     ){
 

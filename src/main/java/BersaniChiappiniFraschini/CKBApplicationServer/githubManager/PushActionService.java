@@ -59,6 +59,12 @@ public class PushActionService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No repository set for this group");
         }
 
+        Date now = new Date(System.currentTimeMillis());
+
+        if(now.after(battle.getSubmission_deadline()) || now.before(battle.getEnrollment_deadline())){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("The time window for submissions is not open");
+        }
+
         Runnable task = () -> fetchTestAndUpdate(battle, group);
         new Thread(task).start();
 
@@ -66,12 +72,6 @@ public class PushActionService {
     }
 
     private void fetchTestAndUpdate(Battle battle, Group group){
-        Date now = new Date(System.currentTimeMillis());
-
-        if(now.after(battle.getSubmission_deadline()) || now.before(battle.getEnrollment_deadline())){
-            return;
-        }
-
 
         // =============== FETCH ===============
         int index = counter.getAndIncrement();
@@ -82,7 +82,7 @@ public class PushActionService {
         // =============== TEST ===============
         EvaluationResult results;
         try {
-            results = codeAnalysisService.launchAutomatedAssessment(dirName, battle);
+            results = codeAnalysisService.launchAutomatedAssessment(dirName + "/project/", battle);
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

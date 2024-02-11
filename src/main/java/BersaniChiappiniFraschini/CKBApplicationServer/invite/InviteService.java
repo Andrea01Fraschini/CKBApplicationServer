@@ -8,7 +8,6 @@ import BersaniChiappiniFraschini.CKBApplicationServer.group.ManagersService;
 import BersaniChiappiniFraschini.CKBApplicationServer.notification.NotificationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.Tournament;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
-import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.AccountType;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.UserService;
@@ -101,6 +100,13 @@ public class InviteService {
         }
 
         var tournament = tournamentRepository.findTournamentByTitle(request.getTournament_title());
+
+        // Check if invited users are subscribed to the tournament
+        if (!tournament.getSubscribed_users().stream().anyMatch(subscriber -> subscriber.getUsername().equals(receiver.getUsername()))) {
+            var res = new PostResponse("User %s is not subscribed to the tournament".formatted(receiver.getUsername()));
+            return ResponseEntity.badRequest().body(res);
+        }
+
         var battle = tournament.getBattles()
                 .stream()
                 .filter(b -> b.getTitle().equals(request.getBattle_title()))
@@ -118,7 +124,13 @@ public class InviteService {
                 .findFirst();
 
         if (context.isEmpty()) {
-            var res = new PostResponse("No group found");
+            var res = new PostResponse("No group found or only leader can invite other students");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+        }
+
+        // Check if limits are violated
+        if (context.get().getMembers().size() + context.get().getPending_invites().size() + 1 > battle.get().getMax_group_size()) {
+            var res = new PostResponse("Cannot invite any more members, group limit exceeded (must be <= than %d)".formatted(battle.get().getMax_group_size()));
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
         }
 
@@ -173,8 +185,9 @@ public class InviteService {
         }
 
         var sender = (User) userDetailsService.loadUserByUsername(invite.get().getSender());
+        var receiver = (User) userDetailsService.loadUserByUsername(invite.get().getReceiver());
 
-        Runnable taskSendEmail = () -> notificationService.sendInviteStatusUpdate(sender, accepted);
+        Runnable taskSendEmail = () -> notificationService.sendInviteStatusUpdate(sender, receiver, accepted);
         executor.submit(taskSendEmail);
 
         return ResponseEntity.ok(null);

@@ -9,6 +9,7 @@ public record CardInfoEducator(
         int subscribed_students_count,
         int number_of_battles,
         Date subscription_deadline,
+        boolean is_open,
         List<Educator> educators
 
 ) implements CardInfo{

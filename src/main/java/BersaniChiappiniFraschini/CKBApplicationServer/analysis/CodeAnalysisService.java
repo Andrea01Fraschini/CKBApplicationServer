@@ -12,6 +12,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This service is responsible for analyzing students' solutions by running the tests and the static analysis
+ * (if configured in the battle).
+ */
 @Service
 @NoArgsConstructor
 public class CodeAnalysisService {
@@ -27,6 +31,14 @@ public class CodeAnalysisService {
         );
     }
 
+    /**
+     * Launch the automated assessment process of the code.
+     * The assessment follows the steps: build -> test -> static analysis.
+     * @param projectDirectory directory of the project to evaluate.
+     * @param battle battle for which the solution has been provided.
+     * @return EvaluationResult containing all the results to tests and static analysis.
+     * @throws Exception if one of the automated steps fail (build -> test -> static analysis)
+     */
     public EvaluationResult launchAutomatedAssessment(String projectDirectory, Battle battle) throws Exception {
 
         var language = battle.getProject_language();

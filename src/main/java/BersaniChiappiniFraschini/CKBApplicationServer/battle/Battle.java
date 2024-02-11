@@ -33,6 +33,4 @@ public class Battle {
     private List<EvalParameter> evaluation_parameters;
     private String project_language;
     private String tests_file_name;
-
-    //TODO test
 }

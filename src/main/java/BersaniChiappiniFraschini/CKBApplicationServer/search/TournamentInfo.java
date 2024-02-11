@@ -1,8 +1,6 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.search;
 
 import BersaniChiappiniFraschini.CKBApplicationServer.dashboard.CardInfo;
-import BersaniChiappiniFraschini.CKBApplicationServer.dashboard.CardInfoEducator;
-import lombok.Data;
 
 import java.util.Date;
 import java.util.List;

@@ -13,6 +13,7 @@ import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentManag
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentRepository;
 import BersaniChiappiniFraschini.CKBApplicationServer.tournament.TournamentService;
 import BersaniChiappiniFraschini.CKBApplicationServer.user.User;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,9 +104,10 @@ class GetBattleTest {
         var info = response.getBody();
         assertAll(
                 ()->assertEquals(HttpStatus.OK, response.getStatusCode()),
-                ()->assertTrue(info instanceof BattleService.BattleInfo)
+                ()->assertTrue(info instanceof BattleInfo)
         );
     }
+
 
     @Test
     @WithMockUser(username = "I'm a manager!", authorities = {"EDUCATOR"})
@@ -114,7 +116,7 @@ class GetBattleTest {
         var info = response.getBody();
         assertAll(
                 ()->assertEquals(HttpStatus.OK, response.getStatusCode()),
-                ()->assertTrue(info instanceof BattleService.BattleInfo)
+                ()->assertTrue(info instanceof BattleInfo)
         );
     }
 

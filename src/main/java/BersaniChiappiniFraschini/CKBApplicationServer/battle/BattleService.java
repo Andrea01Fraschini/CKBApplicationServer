@@ -1,6 +1,5 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.battle;
 
-import BersaniChiappiniFraschini.CKBApplicationServer.authentication.AuthenticationService;
 import BersaniChiappiniFraschini.CKBApplicationServer.config.JwtService;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.EventService;
 import BersaniChiappiniFraschini.CKBApplicationServer.event.TimedEvent;
@@ -29,7 +28,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -45,11 +47,7 @@ public class BattleService {
     private final InviteService inviteService;
     private final JwtService jwtService;
     private final ScoreService scoreService;
-
-    private final AuthenticationService authenticationService;
-
     private final GitHubManagerService gitHubManagerService;
-
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     public ResponseEntity<PostResponse> createBattle(BattleCreationRequest request) {
@@ -61,7 +59,6 @@ public class BattleService {
             var res = new PostResponse("Cannot create a battle as student");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
         }
-
 
         var tournament_title = request.getTournament_title();
         var battle_title = request.getBattle_title();
@@ -107,9 +104,9 @@ public class BattleService {
         try {
             repo = gitHubManagerService.createRepository(tournament_title, battle_title, description);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new PostResponse("GitHub wasn't able to create the repo, try again"));
+            return ResponseEntity.badRequest().body(new PostResponse("GitHub wasn't able to create the repo, try again "+ e.getMessage()));
         }
-        // Future<String> repository = gitHubManagerService.saveFileAndCreateRepository(request.getFile(), tournament_title, battle_title, description);
+
 
         // Create new battle
         Battle battle = Battle.builder()
@@ -149,7 +146,14 @@ public class BattleService {
 
         // upload File
         String finalRepo = repo;
-        Runnable taskUploadFileToGithub = () -> gitHubManagerService.saveFileAndCreateRepository(request.getFile(), battle_title, finalRepo);
+        Runnable taskUploadFileToGithub = () -> {
+            try {
+                CompletableFuture<String>  stringRepo = gitHubManagerService.saveFileAndCreateRepository(request.getFile(), battle_title, finalRepo);
+                stringRepo.get();
+            } catch (ExecutionException | InterruptedException e){
+                throw new RuntimeException(e);
+            }
+        };
         executor.submit(taskUploadFileToGithub);
 
         return ResponseEntity.ok(null);
@@ -178,6 +182,12 @@ public class BattleService {
         var username = auth.getName();
         var student = (User) userDetailsService.loadUserByUsername(username);
 
+        // Check for self invite
+        if (request.getInvited_members().stream().anyMatch(student_name -> student_name.equals(username))) {
+            var res = new PostResponse("Cannot invite yourself");
+            return ResponseEntity.badRequest().body(res);
+        }
+
         // Check if user is subscribed to tournament
         var subscribed = tournament.getSubscribed_users()
                 .stream()
@@ -185,6 +195,11 @@ public class BattleService {
 
         if (!subscribed) {
             var res = new PostResponse("Cannot enroll into battle without being subscribed to tournament");
+            return ResponseEntity.badRequest().body(res);
+        }
+
+        if(request.getInvited_members().stream().anyMatch((s) -> s.equals(username))){
+            var res = new PostResponse("Cannot invite yourself");
             return ResponseEntity.badRequest().body(res);
         }
 
@@ -196,16 +211,23 @@ public class BattleService {
         // Check if group can enroll
         if (battle_match.isEmpty()) {
             var res = new PostResponse("No battle found");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+            return ResponseEntity.badRequest().body(res);
         }
 
         var battle = battle_match.get();
 
-        // TODO: check if user is in another group for the battle
+        //CHECK IF USERNAME IS ALREADY IN A GROUP AS A MEMBER IN THE SAME BATTLE
+        for(Group g : battle.getGroups()){
+            if(g.getMembers().stream().anyMatch((m) -> m.getUsername().equals(username))){
+                var res = new PostResponse("you are already in a group in '"+battle_title+"' battle");
+                return ResponseEntity.badRequest().body(res);
+            }
+        }
 
+        // Check if battle enrollment is closed
         if (new Date(System.currentTimeMillis()).after(battle.getEnrollment_deadline())) {
             var res = new PostResponse("Enrollment period for battle closed");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+            return ResponseEntity.badRequest().body(res);
         }
 
         // + 1 because of the creator
@@ -213,17 +235,23 @@ public class BattleService {
             var message = "Battle group limits exceeded, group size must be between %d and %d"
                     .formatted(battle.getMin_group_size(), battle.getMax_group_size());
             var res = new PostResponse(message);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+            return ResponseEntity.badRequest().body(res);
         }
 
-        String id = ObjectId.get().toString();
-        //TODO: to manage error
-        String token = jwtService.generateJWT(id);
-//        String token = authenticationService.generateToken(id);
+        // Check if invited users are subscribed to the tournament
+        for (var invitee : invites) {
+            if (!tournament.getSubscribed_users().stream().anyMatch(subscriber -> subscriber.getUsername().equals(invitee.getUsername()))) {
+                var res = new PostResponse("User %s is not subscribed to the tournament".formatted(invitee.getUsername()));
+                return ResponseEntity.badRequest().body(res);
+            }
+        }
+
+        String group_id = ObjectId.get().toString();
+        String token = jwtService.generateJWT(group_id);
 
         // Create group
         Group group = Group.builder()
-                .id(id)
+                .id(group_id)
                 .leader(new GroupMember(student))
                 .members(List.of(new GroupMember(student)))
                 .pending_invites(invites.stream().map(PendingInvite::new).toList())
@@ -254,11 +282,10 @@ public class BattleService {
     }
 
     public Runnable startBattle(Tournament tournament, Battle battle) {
-        // automatic deletion of pending invites (can be omitted ?)
-        List<Group> groupsUpdate = automaticControl(tournament, battle);
+        List<Group> updatedGroups = getValidGroups(tournament, battle);
 
         return () -> {
-            for (var group : groupsUpdate) {
+            for (var group : updatedGroups) {
                 String token = group.getAPI_Token();
                 Runnable taskSendEmail = () -> notificationService.sendRepositoryInvites(group, battle, token);
                 executor.submit(taskSendEmail);
@@ -268,19 +295,11 @@ public class BattleService {
 
     public Runnable closeBattle(String tournamentTitle, String battleTitle){
 
-        // QUERY TO HAVE THE BATTLE UPDATE
-        var query = Query.query(
-                Criteria.where("title")
-                        .is(tournamentTitle)
-                        .and("battles.title")
-                        .is(battleTitle)
-        );
-
-        Tournament tournament = mongoTemplate.findOne(query, Tournament.class, "tournament");
+        Tournament tournament = tournamentRepository.findTournamentByTitle(tournamentTitle);
 
         if(tournament == null){
             return () -> {
-                // It sends en error?
+                throw new RuntimeException("Tournament is null");
             };
         }
 
@@ -289,8 +308,6 @@ public class BattleService {
         List<Group> groups = battle.getGroups();
 
         if(battle.isManual_evaluation()){
-            // REGISTRAZIONE EVENTO QUANDO TUTTE LE VALUTAZIONI FATTE ALLORA INVIO
-
             return () -> {
                 Runnable taskSendEmail = () -> notificationService.sendManualEvaluationRequired(tournament, battleTitle);
                 executor.submit(taskSendEmail);
@@ -298,8 +315,8 @@ public class BattleService {
         }else {
             return () -> {
                 for (var group : groups) {
-                    // update the total score for ech group of the battle
-                    scoreService.updateTotalScoreAndRanks(group.getId());
+                    // update the total score for ech group of the battle and the ranks
+                    scoreService.updatePlayersRanks(group.getId());
                     Runnable taskSendEmail = () -> notificationService.sendNewBattleRankAvailable(group, tournamentTitle, battleTitle);
                     executor.submit(taskSendEmail);
                 }
@@ -307,16 +324,13 @@ public class BattleService {
         }
     }
 
-    // TODO TEST
-    private List<Group> automaticControl(Tournament tournament, Battle battle){
+    private List<Group> getValidGroups(Tournament tournament, Battle battle){
         List<Group> groups = battle.getGroups();
         Iterator<Group> iterator = groups.iterator();
         List<TournamentSubscriber> tournamentSubscribers = tournament.getSubscribed_users();
 
         while (iterator.hasNext()) {
             Group group = iterator.next();
-
-            // Condizione per rimuovere l'elemento
             if (group.getMembers().size() < battle.getMin_group_size() || group.getMembers().size() > battle.getMax_group_size()) {
 
                 Runnable taskSendEmail = () -> notificationService.sendGroupRemovedFromBattle(group, battle);
@@ -326,13 +340,13 @@ public class BattleService {
             } else {
                 group.getPending_invites().clear();
 
-                // check if a Student in a group member the same student must be in the subscribed student of the tournament
+                // Check if students are both in a group and subscribed to the tournament
                 List<GroupMember> member = group.getMembers();
 
                 // work on the id
                 for(GroupMember g : member){
                     String id = g.getId();
-                    if(!searchList(tournamentSubscribers, id)){
+                    if(!isStudentSubscribed(tournamentSubscribers, id)){
                         tournamentSubscribers.add(new TournamentSubscriber(g.getId(), g.getUsername(), g.getEmail(), 0));
                     }
                 }
@@ -346,7 +360,10 @@ public class BattleService {
                         .and("battles._id")
                         .is(new ObjectId(battle.getId()))
         );
-        var update = new Update().set("groups", groups);
+
+        var update = new Update()
+                .set("battles.$[battles].groups", groups)
+                .filterArray(Criteria.where("battles._id").is(new ObjectId(battle.getId())));
 
         mongoTemplate.updateFirst(query, update, "tournament");
 
@@ -361,7 +378,7 @@ public class BattleService {
         return groups;
     }
 
-    private boolean searchList(List<TournamentSubscriber> tournamentSubscribers, String id){
+    private boolean isStudentSubscribed(List<TournamentSubscriber> tournamentSubscribers, String id){
         for(TournamentSubscriber t : tournamentSubscribers) {
             if (t.getId().equals(id)) {
                 return true;
@@ -423,6 +440,7 @@ public class BattleService {
                 .enrollment_deadline(battle.getEnrollment_deadline())
                 .submission_deadline(battle.getSubmission_deadline())
                 .evaluation_parameters(battle.getEvaluation_parameters())
+                .manual_evaluation(battle.isManual_evaluation())
                 .leaderboard(battleLeaderboard)
                 .build();
     }
@@ -454,28 +472,4 @@ public class BattleService {
 
         return results.getUniqueMappedResult();
     }
-
-
-
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Builder
-    public static class BattleInfo {
-        private String title;
-        private String description;
-        private String language;
-        private int min_group_size;
-        private int max_group_size;
-        private String repository;
-        private Date enrollment_deadline;
-        private Date submission_deadline;
-        private boolean manual_evaluation;
-        private List<EvalParameter> evaluation_parameters;
-        private List<LeaderboardEntry> leaderboard;
-        private Optional<Group> group;
-        private List<Group> groups;
-    }
-
 }

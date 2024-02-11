@@ -6,6 +6,9 @@ import lombok.Data;
 
 import java.util.Map;
 
+/**
+ * Object containing all the results to the evaluation of a solution.
+ */
 @Data
 public class EvaluationResult {
     private Map<String, TestStatus> tests_results;

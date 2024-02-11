@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * Service that performs authentication actions (Login and Registration)
  */
@@ -43,9 +45,11 @@ public class AuthenticationService {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .accountType(account_type)
+                .invites(List.of())
                 .build();
 
         // Checks for unique values
+
         if(repository.existsUserByEmail(user.getEmail())){
             var body = AuthenticationResponse.builder().error_msg("Email already used").build();
             return ResponseEntity.badRequest().body(body);
@@ -56,11 +60,16 @@ public class AuthenticationService {
             return ResponseEntity.badRequest().body(body);
         }
 
-        storePasswordInMicroservice(user.getUsername(), user.getEmail(), request.getPassword());
-        repository.insert(user);
 
-        String jwt = jwtService.generateJWT(user);
-        return ResponseEntity.ok(AuthenticationResponse.builder().token(jwt).build());
+        try {
+            storePasswordInMicroservice(user.getUsername(), user.getEmail(), request.getPassword());
+            repository.insert(user);
+            String jwt = jwtService.generateJWT(user);
+            return ResponseEntity.ok(AuthenticationResponse.builder().token(jwt).build());
+
+        } catch (Exception e){
+            return ResponseEntity.badRequest().body(AuthenticationResponse.builder().error_msg(e.getMessage()).build());
+        }
     }
 
     // ================================= LOGIN =================================
@@ -69,12 +78,21 @@ public class AuthenticationService {
         String value = request.getPassword();
 
 
-        if (!authenticate(key, value)){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        try {
+            if (!authenticate(key, value)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(AuthenticationResponse.builder()
+                                .error_msg("Login failed")
+                                .build());
+            }
+        } catch (Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(AuthenticationResponse.builder()
-                            .error_msg("Login failed")
+                            .error_msg(e.getMessage())
                             .build());
         }
+
+
 
         var user = userDetailsService.loadUserByUsername(request.getEmail_or_username());
         String jwt = jwtService.generateJWT(user);
@@ -83,32 +101,37 @@ public class AuthenticationService {
 
     // ==================== GENERATION TOKEN FOR GROUP ===========================
     public String generateToken(String idGroup){
-        HttpResponse<ReturnMessage> response = generateTokenRequest(idGroup);
-        if(response.getBody().code == 200){
-            return response.getBody().message;
-        }else {
-            return "ERROR";
+        try {
+            HttpResponse<ReturnMessage> response = generateTokenRequest(idGroup);
+            if (response != null && response.getBody().code == 200) {
+                return response.getBody().message;
+            } else {
+                return "No Token";
+            }
+        }catch (Exception e){
+            return "No Token";
         }
     }
 
-    private HttpResponse<ReturnMessage> generateTokenRequest(String idGroup){
-       return sendPostRequest("/generateAuthToken", new RequestToken(idGroup));
+    private HttpResponse<ReturnMessage> generateTokenRequest(String idGroup) throws Exception {
+        return sendPostRequest("/generateAuthToken", new RequestToken(idGroup));
     }
 
-    private void storePasswordInMicroservice(String username, String email, String password){
+    private void storePasswordInMicroservice(String username, String email, String password) throws Exception {
         sendPostRequest("/registerNewAccount", new StorePasswordRequest(username, email, password));
     }
 
 
-    private boolean authenticate(String username_or_email, String password){
+    private boolean authenticate(String username_or_email, String password) throws Exception {
         HttpResponse<ReturnMessage> response = sendPostRequest("/auth",
                 new AuthRequest(username_or_email, password));
+
         return response.getBody().message.equals("OK");
     }
 
 
     // Microservice communication
-    private HttpResponse<ReturnMessage> sendPostRequest(String method, Object requestBody){
+    private HttpResponse<ReturnMessage> sendPostRequest(String method, Object requestBody) throws Exception {
         String microservice_url = environment.getProperty("auth.microservice.url");
         try {
             Unirest.setObjectMapper(new com.mashape.unirest.http.ObjectMapper() {
@@ -128,6 +151,9 @@ public class AuthenticationService {
                     .body(requestBody).asObject(ReturnMessage.class);
         } catch (UnirestException e) {
             throw new RuntimeException(e);
+        } catch (Exception e) {
+            // in case of no connection with the authentication server
+            throw new Exception("Not able to connect to the authentication server");
         }
     }
 

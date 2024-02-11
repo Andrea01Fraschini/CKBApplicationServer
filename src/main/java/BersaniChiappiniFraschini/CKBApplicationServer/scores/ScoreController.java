@@ -1,15 +1,13 @@
 package BersaniChiappiniFraschini.CKBApplicationServer.scores;
 
-
-import BersaniChiappiniFraschini.CKBApplicationServer.battle.BattleService;
 import BersaniChiappiniFraschini.CKBApplicationServer.genericResponses.PostResponse;
 import BersaniChiappiniFraschini.CKBApplicationServer.group.ManualEvaluationRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/scores")
@@ -17,7 +15,7 @@ import java.util.concurrent.Executors;
 public class ScoreController {
     private final ScoreService scoreService;
 
-    @PostMapping("/manualscores")
+    @PostMapping("/manual_assessment")
     public ResponseEntity<PostResponse> setManualPoints(
             @RequestBody ManualEvaluationRequest manualEvaluationUpdate
     ){
