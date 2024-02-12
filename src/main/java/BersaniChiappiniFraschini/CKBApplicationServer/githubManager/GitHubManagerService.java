@@ -53,7 +53,7 @@ public class GitHubManagerService {
     public void setCodeRepository(String repo, String pathFile) throws Exception {
         String githubToken = environment.getProperty("github.token");
         String owner = environment.getProperty("github.repo.owner");
-
+        System.out.println("GITHUB TOKEN: "+githubToken);
         String[] splitArray = repo.split("/");
         String name = splitArray[splitArray.length - 1];
 
