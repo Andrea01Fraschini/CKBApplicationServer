@@ -156,7 +156,7 @@ public class GitHubManagerService {
     }
 
     @Async
-    public CompletableFuture<String> saveFileAndCreateRepository(MultipartFile file, String battleTitle, String repo) {
+    public void saveFileAndCreateRepository(MultipartFile file, String battleTitle, String repo) {
 
         FilesStorageService filesStorageService = new FilesStorageService();
         String clearBattleName = battleTitle.replace(' ', '_');
@@ -169,7 +169,7 @@ public class GitHubManagerService {
 
             if(name == null || name.equals("")){
                 filesStorageService.deleteAll();
-                return CompletableFuture.failedFuture(new Throwable("No name of the file"));
+                throw new Exception("Empty file");
             }
 
             Resource resource = filesStorageService.load(name);
@@ -178,15 +178,25 @@ public class GitHubManagerService {
             InputStream i = file1.toURI().toURL().openStream();
             filesStorageService.unzip(i, clearBattleName);
             String path = filesStorageService.pathToGitHub();
-            setCodeRepository(repo, path);
-            protectRepo(repo);
+
+            Runnable uploadFile = () -> {
+                try {
+                    setCodeRepository(repo, path);
+                    protectRepo(repo);
+                    filesStorageService.deleteAll();
+                } catch (Exception e) {
+                    filesStorageService.deleteAll();
+                    throw new RuntimeException(e);
+                }
+            };
+
+            Thread t = new Thread(uploadFile);
+            t.start();
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(new Throwable(e.getMessage()));
-        } finally {
             filesStorageService.deleteAll();
+            throw new RuntimeException(e);
         }
 
-        return CompletableFuture.completedFuture(repo);
     }
 
 }

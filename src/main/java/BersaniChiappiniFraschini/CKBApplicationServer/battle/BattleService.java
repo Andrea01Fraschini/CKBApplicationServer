@@ -145,16 +145,7 @@ public class BattleService {
         executor.submit(taskSendEmail);
 
         // upload File
-        String finalRepo = repo;
-        Runnable taskUploadFileToGithub = () -> {
-            try {
-                CompletableFuture<String>  stringRepo = gitHubManagerService.saveFileAndCreateRepository(request.getFile(), battle_title, finalRepo);
-                stringRepo.get();
-            } catch (ExecutionException | InterruptedException e){
-                throw new RuntimeException(e);
-            }
-        };
-        executor.submit(taskUploadFileToGithub);
+        gitHubManagerService.saveFileAndCreateRepository(request.getFile(), battle_title, repo);
 
         return ResponseEntity.ok(null);
     }

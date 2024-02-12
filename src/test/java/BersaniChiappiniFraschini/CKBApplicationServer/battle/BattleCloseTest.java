@@ -95,7 +95,5 @@ class BattleCloseTest {
                                 .build()))
                         .build());
 
-        when(gitHubManagerService.saveFileAndCreateRepository(any(), any(), any()))
-                .thenReturn(CompletableFuture.completedFuture("repo"));
     }
 }

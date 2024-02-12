@@ -92,8 +92,6 @@ class BattleStartTest {
         when(tournamentRepository.findTournamentByTitle(anyString()))
                 .thenReturn(tournament);
 
-        when(gitHubManagerService.saveFileAndCreateRepository(any(), any(), any()))
-                .thenReturn(CompletableFuture.completedFuture("repo"));
     }
 
     @Test
