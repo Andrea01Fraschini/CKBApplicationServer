@@ -27,7 +27,6 @@ public class GitHubManagerService {
     public String createRepository(String tournamentTitle, String battleTitle, String description) throws Exception {
 
         String githubToken = environment.getProperty("github.token");
-        System.out.println("GITHUB TOKEN: "+githubToken);
         String owner = environment.getProperty("github.repo.owner");
 
         try {
